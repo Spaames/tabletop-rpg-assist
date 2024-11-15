@@ -1,5 +1,6 @@
 import {createSlice, PayloadAction} from '@reduxjs/toolkit';
 import {AppThunk} from "@/redux/store";
+import axiosInstance from "@/utils/axiosConfig";
 
 interface AuthState {
     isAuthenticated: boolean;
@@ -44,5 +45,25 @@ const authSlice = createSlice({
 });
 
 export const { loginStart, loginSuccess, loginFailure, login, logout } = authSlice.actions;
+
+export const loginAPI = (username: string, password: string): AppThunk => async (dispatch) => {
+    try {
+        dispatch(loginStart());
+        const response = await axiosInstance.post("/api/login", {
+            username,
+            password,
+        });
+
+        const data = response.data;
+        if (data.status === "success") {
+            dispatch(loginSuccess(data.username));
+        } else {
+            dispatch(loginFailure(data.message));
+        }
+    } catch (error) {
+        console.log(error);
+        dispatch(loginFailure("Error while logging in"));
+    }
+}
 
 export default authSlice.reducer;

@@ -1,32 +1,27 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Box, Button, Heading, Input, Text, Alert, AlertIcon } from '@chakra-ui/react';
+import React, {FormEvent, useState} from 'react';
+import { Box, Button, Heading, Input, Alert, AlertIcon } from '@chakra-ui/react';
 import { useRouter } from 'next/navigation';
-import axiosInstance from '@/utils/axiosConfig';
+import {useAppDispatch, useAppSelector} from "@/redux/hook";
+import {loginAPI} from "@/redux/features/authSlice";
 
 const LoginForm = () => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
-    const [error, setError] = useState('');
+    const dispatch = useAppDispatch();
     const router = useRouter();
 
-    const handleSubmit = async () => {
-        setError('');
-        try {
-            const response = await axiosInstance.post('/api/login', {
-                username,
-                password,
-            });
-            if (response.data.status === 'success') {
-                router.push('/home');
-            } else {
-                setError(response.data.message);
-            }
-        } catch (err) {
-            setError('Connection failed : ' + err);
-        }
+    const { error, loading, isAuthenticated} = useAppSelector((state) => state.auth)
+
+    const handleSubmit = async (e: FormEvent) => {
+        e.preventDefault();
+        dispatch(loginAPI(username, password));
     };
+
+    if (isAuthenticated) {
+        router.push("/home");
+    }
 
     return (
         <Box
@@ -65,6 +60,7 @@ const LoginForm = () => {
                 colorScheme="blue"
                 w="300px"
                 onClick={handleSubmit}
+                isLoading={loading}
             >
                 Login
             </Button>
