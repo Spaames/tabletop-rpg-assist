@@ -2,16 +2,20 @@ import {createSlice, PayloadAction} from '@reduxjs/toolkit';
 import {AppThunk} from "@/redux/store";
 import axiosInstance from "@/utils/axiosConfig";
 
+interface User {
+    username: string;
+}
+
 interface AuthState {
     isAuthenticated: boolean;
-    username: string;
+    user: User;
     loading: boolean;
     error: string | null;
 }
 
 const initialState: AuthState = {
     isAuthenticated: false,
-    username: '',
+    user: {username: ""},
     loading: false,
     error: null,
 };
@@ -26,7 +30,7 @@ const authSlice = createSlice({
         },
         loginSuccess(state, action: PayloadAction<string>) {
             state.isAuthenticated = true;
-            state.username = action.payload;
+            state.user.username = action.payload;
             state.loading = false;
         },
         loginFailure(state, action: PayloadAction<string>) {
@@ -35,11 +39,11 @@ const authSlice = createSlice({
         },
         login(state, action: PayloadAction<string>) {
             state.isAuthenticated = true;
-            state.username = action.payload;
+            state.user.username = action.payload;
         },
         logout: (state) => {
             state.isAuthenticated = false;
-            state.username = "";
+            state.user.username = "";
         },
     },
 });
