@@ -1,10 +1,22 @@
 'use client';
 
 import React from 'react';
-import {Alert, AlertIcon, Box, Heading, Spinner, Text} from '@chakra-ui/react';
-import {useAppSelector} from "@/redux/hook";
+import {Alert, AlertIcon, Box, Button, Heading, Spinner, Text} from '@chakra-ui/react';
+import {useAppDispatch, useAppSelector} from "@/redux/hook";
+import {useRouter} from "next/navigation";
+import {logout} from "@/redux/features/authSlice";
+import {persistor} from "@/redux/store";
 const Page = () => {
+    const dispatch = useAppDispatch();
+    const router = useRouter();
     const {user, loading, error, isAuthenticated } = useAppSelector((state) => state.auth);
+
+    const handleLogout = async () => {
+        dispatch(logout());
+        await persistor.flush();
+        await persistor.purge();
+        router.push('/login');
+    }
 
     if (loading) {
         return (
@@ -48,6 +60,7 @@ const Page = () => {
                 Home page !
             </Heading>
             <Text fontSize="md">Connected ! Welcome {user.username} </Text>
+            <Button colorScheme="red" onClick={handleLogout} size="md" p={4} mt={4}>Logout</Button>
         </Box>
     );
 };

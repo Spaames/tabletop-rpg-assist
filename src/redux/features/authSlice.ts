@@ -37,18 +37,19 @@ const authSlice = createSlice({
             state.loading = false;
             state.error = action.payload;
         },
-        login(state, action: PayloadAction<string>) {
-            state.isAuthenticated = true;
-            state.user.username = action.payload;
-        },
-        logout: (state) => {
-            state.isAuthenticated = false;
+        logout(state) {
+            state.loading = false;
+            state.error = null;
             state.user.username = "";
-        },
+            state.isAuthenticated = false;
+        }
     },
 });
 
-export const { loginStart, loginSuccess, loginFailure, login, logout } = authSlice.actions;
+export const {
+    loginStart, loginSuccess, loginFailure,
+    logout,
+} = authSlice.actions;
 
 export const loginAPI = (username: string, password: string): AppThunk => async (dispatch) => {
     try {
@@ -69,5 +70,6 @@ export const loginAPI = (username: string, password: string): AppThunk => async 
         dispatch(loginFailure("Error while logging in"));
     }
 }
+
 
 export default authSlice.reducer;
