@@ -1,27 +1,24 @@
-'use client';
+'use client'
 
-import React, {FormEvent, useState} from 'react';
-import { Box, Button, Heading, Input, Alert, AlertIcon } from '@chakra-ui/react';
-import { useRouter } from 'next/navigation';
+import {FormEvent, useState} from "react";
 import {useAppDispatch, useAppSelector} from "@/redux/hook";
-import {loginAPI} from "@/redux/features/authSlice";
+import {useRouter} from "next/navigation";
+import {registerAPI} from "@/redux/features/authSlice";
+import {Alert, AlertIcon, Box, Button, Heading, Input} from "@chakra-ui/react";
 
-const LoginForm = () => {
+const RegisterForm = () => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const dispatch = useAppDispatch();
     const router = useRouter();
 
-    const { error, loading, isAuthenticated} = useAppSelector((state) => state.auth)
+    const { error, loading } = useAppSelector((state) => state.auth)
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
-        dispatch(loginAPI(username, password));
+        dispatch(registerAPI(username, password));
+        router.push("/login");
     };
-
-    if (isAuthenticated) {
-        router.push("/home");
-    }
 
     return (
         <Box
@@ -33,7 +30,7 @@ const LoginForm = () => {
             p={4}
         >
             <Heading as="h1" size="lg" mb={4}>
-                Log In
+                Register
             </Heading>
             {error && (
                 <Alert status="error" mb={4} w="300px">
@@ -42,15 +39,14 @@ const LoginForm = () => {
                 </Alert>
             )}
             <Input
-                placeholder="Username"
+                placeholder="username"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 mb={4}
                 w="300px"
             />
             <Input
-                placeholder="Password"
-                type="password"
+                placeholder="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 mb={4}
@@ -68,4 +64,4 @@ const LoginForm = () => {
     );
 };
 
-export default LoginForm;
+export default RegisterForm;
