@@ -2,20 +2,14 @@
 
 import React from 'react';
 import {Alert, AlertIcon, Box, Button, Heading, Spinner, Text} from '@chakra-ui/react';
-import {useAppDispatch, useAppSelector} from "@/redux/hook";
+import { useAppSelector} from "@/redux/hook";
 import {useRouter} from "next/navigation";
-import {logout} from "@/redux/features/authSlice";
-import {persistor} from "@/redux/store";
 const Page = () => {
-    const dispatch = useAppDispatch();
     const router = useRouter();
     const {user, loading, error, isAuthenticated } = useAppSelector((state) => state.auth);
 
     const handleLogout = async () => {
-        dispatch(logout());
-        await persistor.flush();
-        await persistor.purge();
-        router.push('/login');
+        router.push('/logout');
     }
 
     if (loading) {
