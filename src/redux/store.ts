@@ -2,15 +2,17 @@ import { configureStore, ThunkAction, Action, combineReducers } from "@reduxjs/t
 import { persistStore, persistReducer } from "redux-persist";
 import storage from "redux-persist/lib/storage";
 import authReducer from "@/redux/features/authSlice";
+import campaignReducer from "@/redux/features/campaignSlice"
 
 const persistConfig = {
     key: "root",
     storage,
-    whitelist: ["auth"],
+    whitelist: ["auth", "campaign"],
 };
 
 const rootReducer = combineReducers({
     auth: authReducer,
+    campaign: campaignReducer,
 });
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);
