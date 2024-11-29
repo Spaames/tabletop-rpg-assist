@@ -3,16 +3,18 @@ import { persistStore, persistReducer } from "redux-persist";
 import storage from "redux-persist/lib/storage";
 import authReducer from "@/redux/features/authSlice";
 import campaignReducer from "@/redux/features/campaignSlice"
+import playerReducer from "@/redux/features/playerSlice"
 
 const persistConfig = {
     key: "root",
     storage,
-    whitelist: ["auth", "campaign"],
+    whitelist: ["auth", "campaign", "player"],
 };
 
 const rootReducer = combineReducers({
     auth: authReducer,
     campaign: campaignReducer,
+    player: playerReducer,
 });
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);

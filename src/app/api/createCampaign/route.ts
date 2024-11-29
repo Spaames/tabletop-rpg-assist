@@ -4,9 +4,9 @@ import {dbName} from "@/utils/mongodb";
 
 export async function POST(req: NextRequest) {
     try {
-        const { name, playerCount, username } = await req.json();
+        const { name, username } = await req.json();
 
-        if (!name || !playerCount || !username) {
+        if (!name || !username) {
             return NextResponse.json({ message: "Name AND playerCount are required" }, { status: 400 });
         }
 
@@ -19,7 +19,9 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ message: "Campaign already exists" }, { status: 401 });
         }
 
-        const result = await campaignCollection.insertOne({ name, playerCount, username });
+
+
+        const result = await campaignCollection.insertOne({ name, username });
 
         return NextResponse.json({ message: "Campaign registered", campaignId: result.insertedId }, {status: 201});
     } catch (err) {

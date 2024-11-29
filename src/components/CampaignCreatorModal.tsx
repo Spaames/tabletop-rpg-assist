@@ -20,7 +20,6 @@ import {createCampaignAPI} from "@/redux/features/campaignSlice";
 const CampaignCreatorModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => {
     const [formData, setFormData] = useState({
         campaignName: '',
-        playerCount: 0,
     });
     const dispatch = useAppDispatch();
     const username = useAppSelector((state) => state.auth.user.username);
@@ -31,7 +30,7 @@ const CampaignCreatorModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: (
     };
 
     const handleSubmit = () => {
-        dispatch(createCampaignAPI(formData.campaignName, formData.playerCount, username));
+        dispatch(createCampaignAPI(formData.campaignName, username));
         console.log('Form submitted:', formData, username);
         onClose();
     };
@@ -50,15 +49,6 @@ const CampaignCreatorModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: (
                             value={formData.campaignName}
                             onChange={handleChange}
                             placeholder="Enter campaign name"
-                        />
-                    </FormControl>
-                    <FormControl isRequired mb={4}>
-                        <FormLabel>Player Count</FormLabel>
-                        <Input
-                            name="playerCount"
-                            value={formData.playerCount}
-                            onChange={handleChange}
-                            placeholder="Enter the number of player"
                         />
                     </FormControl>
                 </ModalBody>

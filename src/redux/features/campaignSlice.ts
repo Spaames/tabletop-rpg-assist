@@ -4,7 +4,6 @@ import {AppThunk} from "@/redux/store";
 interface Campaign {
     name: string;
     username: string;
-    playerCount: number;
 }
 
 interface CampaignState {
@@ -57,13 +56,13 @@ export const {
     getStart, getSuccess, getFailure,
 } = campaignSlice.actions;
 
-export const createCampaignAPI = (name: string, playerCount: number, username: string): AppThunk => async (dispatch) => {
+export const createCampaignAPI = (name: string, username: string): AppThunk => async (dispatch) => {
     try {
         dispatch(createStart());
         const response = await fetch("/api/createCampaign", {
             method: "POST",
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({name, playerCount, username})
+            body: JSON.stringify({name, username})
         });
 
         const data = await response.json();

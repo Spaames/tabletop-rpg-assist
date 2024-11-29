@@ -16,8 +16,10 @@ const Page = () => {
     const campaignListStore = useAppSelector((state) => state.campaign.campaigns);
 
     useEffect(() => {
-        dispatch(getCampaignAPI(user.username));
-    }, [user.username, dispatch]);
+        if (!isModalOpen) {
+            dispatch(getCampaignAPI(user.username));
+        }
+    }, [isModalOpen, user.username, dispatch]);
 
     const handleLogout = async () => {
         router.push('/logout');
@@ -71,14 +73,16 @@ const Page = () => {
                 <Text fontSize="xl" p={4}>{user.username.toUpperCase()}&#39;s campaign :</Text>
                 {campaignListStore && campaignListStore.length > 0 && (
                     [...campaignListStore].reverse().map((campaign, index) => (
-                        <Link key={index} href={`/campaign/${campaign.username}`} passHref>
-                            <Button
-                                variant="outline"
-                                mb={3}
-                            >
-                                {campaign.name}
-                            </Button>
-                        </Link>
+                        campaign && campaign.name ? (
+                            <Link key={index} href={`/campaign/${campaign.name}`} passHref>
+                                <Button
+                                    variant="outline"
+                                    mb={3}
+                                >
+                                    {campaign.name}
+                                </Button>
+                            </Link>
+                        ) : null
                     ))
                 )}
 
