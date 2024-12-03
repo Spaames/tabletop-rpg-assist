@@ -13,12 +13,11 @@ import Link from "next/link";
      const [isModalOpen, setModalOpen] = useState(false);
      const playerListStore = useAppSelector((state) => state.player.players);
 
-
      useEffect(() => {
-         if (!isModalOpen && campaign) {
+         if (campaign) {
              dispatch(getPlayerAPI(campaign.name));
          }
-     }, [isModalOpen, campaign, playerListStore, dispatch]);
+     }, []);
 
      const openModal = () => setModalOpen(true);
      const closeModal = () => setModalOpen(false);

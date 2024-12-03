@@ -31,7 +31,15 @@ const PlayerCreatorModal = ({ isOpen, onClose, campaignName }: { isOpen: boolean
     const handleSubmit = () => {
         const newPlayer = {
             name: formData.playerName,
+            lvl: 1,
+            sex: "",
+            age: 0,
+            height: 0,
+            weight: 0,
+            race: "",
+            class: "",
             HP: 0,
+            HD: "",
             STR: 0,
             DEX: 0,
             CON: 0,
@@ -39,6 +47,7 @@ const PlayerCreatorModal = ({ isOpen, onClose, campaignName }: { isOpen: boolean
             WIS: 0,
             CHA: 0,
             DEF: 0,
+            INIT: 0,
             weapons: [
                 {
                     name: "",
@@ -46,17 +55,14 @@ const PlayerCreatorModal = ({ isOpen, onClose, campaignName }: { isOpen: boolean
                     special: "",
                 },
             ],
-            abilities: [
-                {
-                    category: "",
-                    description: "",
-                },
-            ],
+            abilities: "",
+            bonus: "",
+            malus: "",
             inventory: [
                 {
-                    category: "",
+                    name: "",
                     description: "",
-                    amount: 0,
+                    amount: "",
                 },
             ],
             picture: "",
