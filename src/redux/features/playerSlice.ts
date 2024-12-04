@@ -24,6 +24,7 @@ export interface Player {
     abilities: string;
     bonus: string;
     malus: string;
+    specialRules: string;
     inventory: {name: string, amount: string, description: string}[];
     picture: string;
     campaign: string;

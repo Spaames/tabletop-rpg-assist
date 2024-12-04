@@ -44,6 +44,7 @@ export  async function POST(req: NextRequest) {
             abilities: player.abilities,
             bonus: player.bonus,
             malus: player.malus,
+            specialRules: player.specialRules,
             inventory: player.inventory,
             picture: player.picture,
             campaign: player.campaign,

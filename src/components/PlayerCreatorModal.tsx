@@ -58,6 +58,7 @@ const PlayerCreatorModal = ({ isOpen, onClose, campaignName }: { isOpen: boolean
             abilities: "",
             bonus: "",
             malus: "",
+            specialRules: "",
             inventory: [
                 {
                     name: "",

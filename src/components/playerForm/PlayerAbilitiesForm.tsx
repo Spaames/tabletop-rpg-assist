@@ -42,6 +42,13 @@ const PlayerAbilitiesForm: React.FC<PlayerAbilitiesFormProps> = ({playerData}) =
                 value={playerData.abilities}
                 onChange={(e) => handleChange("abilities", e.target.value)}
             />
+
+            <Heading size="md" mt={4} mb={1}>Special Rules</Heading>
+            <Textarea
+                typeof="text"
+                value={playerData.specialRules}
+                onChange={(e) => handleChange("specialRules", e.target.value)}
+            />
         </Box>
     )
 }

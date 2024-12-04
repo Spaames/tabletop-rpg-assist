@@ -2,9 +2,11 @@
 
 
 import {Player, updatePlayer} from "@/redux/features/playerSlice";
-import {Box, Flex, HStack, Image, Input, Text} from "@chakra-ui/react";
-import React from "react";
-import {useAppDispatch} from "@/redux/hook";
+import {Box, Button, Flex, HStack, Image, Input, Text} from "@chakra-ui/react";
+import React, {useState} from "react";
+import {useAppDispatch, useAppSelector} from "@/redux/hook";
+import ImageSelectorModal from "@/components/ImageSelectorModal";
+
 
 interface PlayerPresentationFormProps {
     playerData: Player
@@ -12,20 +14,17 @@ interface PlayerPresentationFormProps {
 
 const PlayerPresentationForm: React.FC<PlayerPresentationFormProps> = ({playerData}) => {
     const dispatch = useAppDispatch();
+    const [isModalOpen, setIsModalOpen] = useState<boolean>(false); // Contrôle de la modale
+    const username = useAppSelector((state) => state.auth.user.username);
+    const campaignName = playerData.campaign;
 
     const handleChange = (field: keyof Player, value: string | number) => {
         dispatch(updatePlayer({ name: playerData.name, updatedData: { [field]: value } }));
     };
 
-    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = () => {
-                dispatch(updatePlayer({ name: playerData.name, updatedData: { picture: reader.result as string } }));
-            };
-            reader.readAsDataURL(file);
-        }
+    const handleImageSelect = (image: string) => {
+        const imagePath = `/${username}/${campaignName}/players/${image}`;
+        dispatch(updatePlayer({ name: playerData.name, updatedData: { picture: imagePath } }));
     };
 
 
@@ -126,14 +125,20 @@ const PlayerPresentationForm: React.FC<PlayerPresentationFormProps> = ({playerDa
                     </Flex>
                 </Box>
             </HStack>
-            <Flex alignItems="center" gap={2} mt={2}>
-                <Input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                />
-            </Flex>
+            {/* Bouton pour ouvrir la modale */}
+            <Button mt={4} colorScheme="teal" onClick={() => setIsModalOpen(true)}>
+                Select Character Image
+            </Button>
 
+            {/* Modale réutilisable */}
+            <ImageSelectorModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                username={username}
+                campaignName={campaignName}
+                folder="players"
+                onSelect={handleImageSelect}
+            />
         </Box>
     );
 }

@@ -1,7 +1,4 @@
 export function getModifier(value: number): number {
-    if (value < 0 || value > 20) {
-        throw new Error("Value must be between 0 and 20");
-    }
 
     const ranges = [
         { min: 0, max: 1, modifier: -5 },
@@ -14,7 +11,9 @@ export function getModifier(value: number): number {
         { min: 14, max: 15, modifier: +2 },
         { min: 16, max: 17, modifier: +3 },
         { min: 18, max: 19, modifier: +4 },
-        { min: 20, max: 20, modifier: +5 },
+        { min: 20, max: 21, modifier: +5 },
+        { min: 22, max: 23, modifier: +6 },
+        { min: 24, max: 24, modifier: +7 },
     ];
 
     for (const range of ranges) {
