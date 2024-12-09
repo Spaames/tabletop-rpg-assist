@@ -1,6 +1,6 @@
 "use client"
 
-import {Box, Button, Heading, Text, VStack} from "@chakra-ui/react";
+import {Box, Button, Card, CardBody, Divider, Heading, SimpleGrid, Text, VStack} from "@chakra-ui/react";
 import {useAppDispatch, useAppSelector} from "@/redux/hook";
 import React, {useEffect, useState} from "react";
 import PlayerCreatorModal from "@/components/PlayerCreatorModal";
@@ -41,7 +41,6 @@ import Link from "next/link";
                 justifyContent="left"
             >
                 <Heading as={"h1"} size={"lg"} ml={4}>{campaign.username.toUpperCase()} -- {campaign.name}</Heading>
-
             </Box>
             <Box
                 display="flex"
@@ -55,22 +54,44 @@ import Link from "next/link";
                 >
                     <VStack spacing={4} alignItems="center">
                         <Heading as="h2" fontSize="xl">Players :</Heading>
-                        {playerListStore && playerListStore.length > 0 && (
-                            [...playerListStore].reverse().map((player, index) => (
-                                player && player.name ? (
-                                    <Link key={index} href={`/player/${player.name}`} passHref>
-                                        <Button
-                                            variant="outline"
-                                            mb={2}
-                                        >
-                                            {player.name}
-                                        </Button>
-                                    </Link>
-                                ) : null
-                            ))
-                        )}
+                        <Card>
+                            <CardBody>
+                                <SimpleGrid
+                                    columns={2}
+                                    spacing={4}
+                                    width="100%"
+                                    justifyItems="center"
+                                    alignItems="center"
+                                >
+                                    {playerListStore && playerListStore.length > 0 && (
+                                        [...playerListStore].reverse().map((player, index) => (
+                                            player && player.name ? (
+                                                <Link key={index} href={`/player/${player.name}`} passHref>
+                                                    <Button
+                                                        variant="outline"
+                                                        mb={2}
+                                                    >
+                                                        {player.name}
+                                                    </Button>
+                                                </Link>
+                                            ) : null
+                                        ))
+                                    )}
+                                </SimpleGrid>
 
-                        <Button onClick={openModal}>+ Player Creator +</Button>
+                            </CardBody>
+                        </Card>
+                        <Button onClick={openModal} mb={2}>+ Player Creator +</Button>
+                        <Divider />
+                        <Link href={`/entities/${campaign.name}`} passHref>
+                            <Button
+                            variant="outline"
+                            mb={2}
+                            mt={2}
+                            >
+                                Entity list
+                            </Button>
+                        </Link>
                     </VStack>
                 </Box>
                 <Box
