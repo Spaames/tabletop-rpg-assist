@@ -4,17 +4,19 @@ import storage from "redux-persist/lib/storage";
 import authReducer from "@/redux/features/authSlice";
 import campaignReducer from "@/redux/features/campaignSlice"
 import playerReducer from "@/redux/features/playerSlice"
+import entityReducer from "@/redux/features/entitySlice"
 
 const persistConfig = {
     key: "root",
     storage,
-    whitelist: ["auth", "campaign", "player"],
+    whitelist: ["auth", "campaign", "player", "entity"],
 };
 
 const rootReducer = combineReducers({
     auth: authReducer,
     campaign: campaignReducer,
     player: playerReducer,
+    entity: entityReducer,
 });
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);

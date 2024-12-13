@@ -66,13 +66,16 @@ const entitySlice = createSlice({
                 };
             }
         },
+        updateEntities(state, action: PayloadAction<Entity[]>) {
+            state.entities = action.payload;
+        },
     }
 });
 
 export const {
     start, failure,
     createSuccess, getSuccess, updateSuccess,
-    updateEntity,
+    updateEntity, updateEntities,
 } = entitySlice.actions;
 
 export const createEntityAPI = (campaignName: string): AppThunk => async (dispatch) => {
@@ -99,15 +102,15 @@ export const createEntityAPI = (campaignName: string): AppThunk => async (dispat
 export const getEntityAPI = (campaignName: string): AppThunk => async (dispatch) => {
     try {
         dispatch(start());
-        const response = await fetch("/api/getEntity", {
-            method: "GET",
+        const response = await fetch("/api/getEntities", {
+            method: "POST",
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({campaignName}),
         });
 
         const data = await response.json();
         if(response.ok) {
-
+            dispatch(getSuccess(data.entityList));
         } else {
             dispatch(failure(data.message));
         }
@@ -128,7 +131,7 @@ export const updateEntitiesAPI = (updatedEntities: Entity[]): AppThunk => async 
 
         const data = await response.json();
         if(response.ok) {
-
+            dispatch(updateEntities(data.entityList));
         } else {
             dispatch(failure(data.message));
         }
