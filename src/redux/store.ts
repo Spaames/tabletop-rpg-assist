@@ -5,11 +5,12 @@ import authReducer from "@/redux/features/authSlice";
 import campaignReducer from "@/redux/features/campaignSlice"
 import playerReducer from "@/redux/features/playerSlice"
 import entityReducer from "@/redux/features/entitySlice"
+import gameReducer from "@/redux/features/gameSlice"
 
 const persistConfig = {
     key: "root",
     storage,
-    whitelist: ["auth", "campaign", "player", "entity"],
+    whitelist: ["auth", "campaign", "player", "entity", "game"],
 };
 
 const rootReducer = combineReducers({
@@ -17,6 +18,7 @@ const rootReducer = combineReducers({
     campaign: campaignReducer,
     player: playerReducer,
     entity: entityReducer,
+    game: gameReducer,
 });
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);

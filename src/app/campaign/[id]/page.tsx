@@ -8,10 +8,12 @@ import {getPlayerAPI} from "@/redux/features/playerSlice";
 import Link from "next/link";
 
  export default function Page({ params }: { params: {id: string} }) {
-     const campaign = useAppSelector((state) => state.campaign.campaigns.find(campaign => campaign.name === params.id));
+     const campaign = useAppSelector((state) => state.campaign.campaigns.find(campaign => campaign.name === decodeURI(params.id)));
      const dispatch = useAppDispatch();
      const [isModalOpen, setModalOpen] = useState(false);
      const playerListStore = useAppSelector((state) => state.player.players);
+     const username = useAppSelector((state) => state.auth.user.username);
+
 
      useEffect(() => {
          if (campaign) {
@@ -21,6 +23,11 @@ import Link from "next/link";
 
      const openModal = () => setModalOpen(true);
      const closeModal = () => setModalOpen(false);
+
+     const handleNewWindow = () => {
+         const newWindowUrl = "/game/" + params.id + "-" + username;
+         window.open(newWindowUrl, "_blank");
+     };
 
     if (!campaign) {
         return(
@@ -53,7 +60,6 @@ import Link from "next/link";
                     justifyContent="center"
                 >
                     <VStack spacing={4} alignItems="center">
-                        <Heading as="h2" fontSize="xl">Players :</Heading>
                         <Card>
                             <CardBody>
                                 <SimpleGrid
@@ -100,7 +106,14 @@ import Link from "next/link";
                     alignItems="center"
                     justifyContent="center"
                 >
-                    Colonne droite
+                    <Button
+                    variant="outline"
+                    mb={2}
+                    size="lg"
+                    onClick={handleNewWindow}
+                    >
+                        Lancer une partie
+                    </Button>
                 </Box>
             </Box>
             <PlayerCreatorModal isOpen={isModalOpen} onClose={closeModal} campaignName={campaign.name} />
