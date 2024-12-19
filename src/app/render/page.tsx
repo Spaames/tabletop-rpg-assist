@@ -2,25 +2,38 @@
 
 import { Box } from "@chakra-ui/react";
 import { useAppSelector } from "@/redux/hook";
+import {useEffect, useState} from "react";
 
 export default function RenderPage() {
-    const background = useAppSelector((state) => state.game.background);
+    const [background, setBackground] = useState<string>("");
 
-    // Encoder l'URL, y compris l'apostrophe
-    const encodedBackground = encodeURI(background);
+    const fetchCurrentBgAPI = async () => {
+        try {
+            const response = await fetch('/api/getCurrentBgImage');
+            if (response.ok) {
+                const data = await response.json();
+                setBackground(data.background);
+            }
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    useEffect(() => {
+        const interval = setInterval(fetchCurrentBgAPI, 1000);
+
+        return () => clearInterval(interval); // Nettoie l'intervalle lorsque le composant est démonté
+    }, []);
 
     return (
         <Box
-            display="flex"
-            alignItems="center"
-            justifyContent="center"
             height="100vh"
-            backgroundImage={`url(${encodedBackground})`} // Appliquer l'URL encodée
+            backgroundImage={`url(${background})`}
             backgroundSize="cover"
             backgroundPosition="center"
             backgroundRepeat="no-repeat"
         >
-            <h1 style={{ color: "white" }}>Page de rendu</h1>
+            <h1>Page de Rendu</h1>
         </Box>
     );
 }
