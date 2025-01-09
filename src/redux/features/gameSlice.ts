@@ -28,14 +28,10 @@ const gameSlice = createSlice({
     name: "game",
     initialState,
     reducers: {
-        updateBackground: (state, action: PayloadAction<string>) => {
-            state.background = action.payload;
-        }
     }
 });
 
 export const {
-    updateBackground,
 } = gameSlice.actions;
 
 export default gameSlice.reducer;
