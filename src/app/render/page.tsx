@@ -5,12 +5,14 @@ import { useEffect, useState } from "react";
 import {Scene, Card, updateCardPosition} from "@/redux/features/sceneSlice";
 import Draggable from 'react-draggable';
 import { DraggableEvent, DraggableData } from 'react-draggable';
-import {useAppDispatch} from "@/redux/hook";
+import {useAppDispatch, useAppSelector} from "@/redux/hook";
 
 
 export default function RenderPage() {
     const [currentScene, setCurrentScene] = useState<Scene>({ background: "", music: "", cards: [] });
     const dispatch = useAppDispatch();
+
+    const cardsStore = useAppSelector((state) => state.scene.scenes);
 
     // Récupération des données depuis l'API
     const fetchCurrentSceneAPI = async () => {
@@ -55,11 +57,12 @@ export default function RenderPage() {
         saveScenePositions(
             currentScene.cards.map(card =>
                 card.id === cardId
-                    ? { ...card, position: { x: data.x, y: data.y } }
+                    ? {...card, position: {x: data.x, y: data.y}}
                     : card
             )
         );
-    };
+        console.log(cardsStore);
+     };
 
 
     // Sauvegarde des positions dans l'API

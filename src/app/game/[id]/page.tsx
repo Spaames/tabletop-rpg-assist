@@ -10,7 +10,7 @@ import {
 import { useAppDispatch, useAppSelector } from "@/redux/hook";
 import React, {useEffect, useState} from "react";
 import ImageSelectorModal from "@/components/ImageSelectorModal";
-import {addCard, removeCard, Scene} from "@/redux/features/sceneSlice";
+import {addCard, getAllSceneThunk, getSceneThunk, removeCard, Scene} from "@/redux/features/sceneSlice";
 import {Player} from "@/redux/features/playerSlice";
 import {Entity} from "@/redux/features/entitySlice";
 
@@ -20,8 +20,15 @@ export default function Page({ params }: { params: { id: string } }) {
     const campaignUrl = urlSplit[0];
     const userUrl = urlSplit[1];
 
-    const [currentScene, setCurrentScene] = useState<Scene>({background: "", music: "", cards: []});
+    const [currentScene, setCurrentScene] = useState<Scene>({
+        background: "",
+        music: "",
+        cards: []
+    });
 
+    const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+
+    //recup de puis le store
     const dispatch = useAppDispatch();
     const players = useAppSelector((state) =>
         state.player.players.filter((player) => player.campaign === campaignUrl)
@@ -31,27 +38,36 @@ export default function Page({ params }: { params: { id: string } }) {
         state.entity.entities.filter((entity) => entity.campaign === campaignUrl)
             .sort((a, b) => a.name.localeCompare(b.name))
     );
+    //les scenes sont init quand on clique sur lancer la partie, avant
     const scenes = useAppSelector((state) =>
         state.scene.scenes);
 
+    // Au montage, on récupère toutes les scènes depuis la BDD via getAllSceneThunk
+    useEffect(() => {
+        dispatch(getAllSceneThunk());
+    }, [dispatch]);
+
+    //pour savoir si une scène est selectionnée
     const isSceneDefault = currentScene.background === "" && currentScene.music === "" && currentScene.cards.length === 0;
 
+    //pour garder currentScene à jour avec redux
     useEffect(() => {
-        if (currentScene.background) {
-            const updatedScene = scenes.find(scene => scene.background === currentScene.background);
-            if (updatedScene) {
-                setCurrentScene(updatedScene);
-            }
+        if (!currentScene.background) return;
+        const updatedScene = scenes.find(
+            (scene) => scene.background === currentScene.background
+        );
+        if (updatedScene && updatedScene !== currentScene) {
+            setCurrentScene(updatedScene);
         }
-    }, [scenes]);
+    }, [currentScene, scenes]);
 
-
-    //const currentBackground = useAppSelector((state) => state.scene.scenes);
-
-    const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
-
-    const handleImageSelect = (image: string) => {
+    //ouvre la modale pour choisir une scene
+    const handleImageSelect = async (image: string) => {
         const imagePath = `/${userUrl}/${campaignUrl}/scenes/${image}`;
+
+        await dispatch(getSceneThunk(imagePath));
+
+
         const selectedScene = scenes.find(scene => scene.background === imagePath);
         setCurrentScene(selectedScene ?? { background: "", music: "", cards: [] });
         sendCurrentScene(selectedScene ?? { background: "", music: "", cards: [] });
@@ -72,7 +88,6 @@ export default function Page({ params }: { params: { id: string } }) {
             }
 
             const data = await response.json();
-            console.log(data.success);
         } catch (error) {
             console.error(error);
         }

@@ -54,6 +54,17 @@ const sceneSlice = createSlice({
             state.error = null;
             state.scenes = action.payload;
         },
+        getSceneSuccess(state, action: PayloadAction<Scene>) {
+            const updatedScene = action.payload;
+            const index = state.scenes.findIndex(scene => scene.background === updatedScene.background);
+
+            if (index !== -1) {
+                state.scenes[index] = updatedScene;
+            }
+        },
+        getAllSceneSuccess(state, action: PayloadAction<Scene[]>) {
+            state.scenes = action.payload;
+        },
         addCard(state, action: PayloadAction<{ background: string; card: Card }>) {
             const { background, card } = action.payload;
             const scene = state.scenes.find(scene => scene.background === background);
@@ -74,8 +85,8 @@ const sceneSlice = createSlice({
             if (scene) {
                 const card = scene.cards.find(card => card.id === cardId);
                 if (card) {
-                    console.log(position.x, position.y);
                     card.position = { x: position.x, y: position.y }; // Mise à jour explicite
+                    console.log(JSON.parse(JSON.stringify(card.position)));
                 }
             }
         }
@@ -83,10 +94,11 @@ const sceneSlice = createSlice({
 });
 
 export const {
-    start, failure, initSucess,
+    start, failure, initSucess, getSceneSuccess, getAllSceneSuccess,
     updateScene, addCard, removeCard, updateCardPosition,
 } = sceneSlice.actions;
 
+//init les scenes basés sur ce qui est présent dans le dossier d'image, puis l'injecte dans le store
 export const initSceneThunk = (username: string, campaignName: string, folder: string): AppThunk => async (dispatch) => {
     try {
         dispatch(start());
@@ -112,8 +124,97 @@ export const initSceneThunk = (username: string, campaignName: string, folder: s
         dispatch(initSucess(scenes));
     } catch (e) {
         console.log(e);
-        dispatch(failure("echec thunk"));
+        dispatch(failure("echec try thunk"));
     }
 }
+
+//récupère les infos d'une scene précise
+export const getSceneThunk = (background: string): AppThunk => async (dispatch) => {
+    try {
+        dispatch(start());
+        const response = await fetch('/api/getScene', {
+            method: "POST",
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({background}),
+        });
+
+        const data = await response.json();
+        if (response.ok) {
+            dispatch(getSceneSuccess(data.scene));
+        } else {
+            dispatch(failure("Echec getScene thunk"));
+        }
+    } catch (error) {
+        console.log(error);
+        dispatch(failure("Echec try getScene thunk"));
+    }
+}
+
+//récupère toutes les scenes en base
+export const getAllSceneThunk = (): AppThunk => async (dispatch) => {
+    try {
+        dispatch(start());
+        const response = await fetch('/api/getScenes', {
+            method: "GET",
+            headers: { 'Content-Type': 'application/json' },
+        });
+
+        const data = await response.json();
+        if(response.ok) {
+            dispatch(getAllSceneSuccess(data.scenes));
+        } else {
+            dispatch(failure("Echec getAllSceneThunk"));
+        }
+    } catch (error) {
+        console.log(error);
+        dispatch(failure("Echec try getAllSceneThunk"));
+    }
+}
+
+export const updateSceneThunk = (scene: Scene): AppThunk => async (dispatch) => {
+    try {
+        dispatch(start());
+        //vrifier si la scène existe en base
+        const fetchResponse = await fetch('/api/getScene', {
+            method: "POST",
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ background: scene.background }),
+        });
+
+        const fetchData = await fetchResponse.json();
+
+        if (fetchResponse.ok && fetchData.scene) {
+            //la scène existe, on la met à jour
+            const updateResponse = await fetch('/api/updateScene', {
+                method: "PUT",
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(scene),
+            });
+
+            if (updateResponse.ok) {
+                dispatch(getSceneSuccess(scene)); // Met à jour le store Redux
+            } else {
+                dispatch(failure("Échec de la mise à jour de la scène"));
+            }
+        } else {
+            //La scène n'existe pas, on la crée
+            const createResponse = await fetch('/api/createScene', {
+                method: "POST",
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(scene),
+            });
+
+            if (createResponse.ok) {
+                dispatch(getSceneSuccess(scene)); // Met à jour le store Redux
+            } else {
+                dispatch(failure("Échec de la création de la scène"));
+            }
+        }
+    } catch (error) {
+        console.error(error);
+        dispatch(failure("Erreur lors de la mise à jour ou de la création de la scène"));
+    }
+};
+
 
 export default sceneSlice.reducer;
