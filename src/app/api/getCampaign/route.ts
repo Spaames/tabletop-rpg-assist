@@ -25,6 +25,7 @@ export  async function POST(req: NextRequest) {
             name: campaign.name,
             playerCount: campaign.playerCount,
             username: campaign.username,
+            currentScene: campaign.currentScene,
         }));
 
         return NextResponse.json({ message: "Campaigns for this user", campaignList: campaignList, status: 201 });

@@ -1,83 +1,131 @@
 "use client";
 
+import React, { useEffect, useState } from "react";
 import { Box, Image } from "@chakra-ui/react";
-import { useEffect, useState } from "react";
-import {Scene, Card, updateCardPosition} from "@/redux/features/sceneSlice";
-import Draggable from 'react-draggable';
-import { DraggableEvent, DraggableData } from 'react-draggable';
-import {useAppDispatch, useAppSelector} from "@/redux/hook";
+import Draggable, { DraggableEvent, DraggableData } from "react-draggable";
 
+// Redux
+import { useAppDispatch, useAppSelector } from "@/redux/hook";
+import {
+    Scene,
+    Card,
+    getSceneThunk,         // POST /api/getScene
+    updateCardPosition,
+    updateSceneThunk,       // PUT /api/updateScene
+} from "@/redux/features/sceneSlice";
+
+import { getCampaignAPI, Campaign } from "@/redux/features/campaignSlice";
 
 export default function RenderPage() {
-    const [currentScene, setCurrentScene] = useState<Scene>({ background: "", music: "", cards: [] });
     const dispatch = useAppDispatch();
 
-    const cardsStore = useAppSelector((state) => state.scene.scenes);
+    /**
+     * Ici on définit "username" et "campaignName" en dur,
+     * mais tu peux évidemment les récupérer via un param d'URL
+     * ou tout autre moyen selon tes besoins
+     */
+    const username = "rdu";
+    const campaignName = "Bloodborne";
 
-    // Récupération des données depuis l'API
-    const fetchCurrentSceneAPI = async () => {
-        try {
-            const response = await fetch('/api/getCurrentScene');
-            if (response.ok) {
-                const data = await response.json();
-                setCurrentScene(data.scene);
-            }
-        } catch (error) {
-            console.error(error);
-        }
-    };
+    // 1) On récupère la liste de campagnes dans Redux
+    const campaigns = useAppSelector((state) => state.campaign.campaigns);
 
+    // 2) On cherche la campagne qui correspond (username, name)
+    const currentCampaign: Campaign | undefined = campaigns.find(
+        (c) => c.username === username && c.name === campaignName
+    );
+
+    // 3) On a aussi la liste de scènes en Redux
+    const scenes = useAppSelector((state) => state.scene.scenes);
+
+    // 4) État local : la scène affichée
+    const [currentScene, setCurrentScene] = useState<Scene>({
+        background: "",
+        music: "",
+        cards: [],
+    });
+
+    /**
+     * (A) Polling pour récupérer la liste de campagnes => /api/getCampaign
+     *    On appelle un thunk getCampaignAPI(username: string),
+     *    qui fait un POST avec {username} et renvoie campaignList.
+     */
     useEffect(() => {
-        const interval = setInterval(fetchCurrentSceneAPI, 1000);
+        const interval = setInterval(() => {
+            dispatch(getCampaignAPI("rdu"));
+            // ou getCampaignAPI(username) si tu l'as paramétré ainsi
+        }, 2000);
+
         return () => clearInterval(interval);
-    }, []);
+    }, [dispatch]);
 
-    // Gestion du déplacement d'une carte
-    const handleCardStop = (e: DraggableEvent, data: DraggableData, cardId: number) => {
-        console.log('Position finale :', data.x, data.y);
-
-        // Mise à jour dans Redux
-        dispatch(updateCardPosition({
-            background: currentScene.background,
-            cardId,
-            position: { x: data.x, y: data.y }
-        }));
-
-        // Mise à jour dans l'état local pour affichage immédiat
-        setCurrentScene(prevScene => ({
-            ...prevScene,
-            cards: prevScene.cards.map(card =>
-                card.id === cardId
-                    ? { ...card, position: { x: data.x, y: data.y } }
-                    : card
-            ),
-        }));
-
-        // Sauvegarde côté API
-        saveScenePositions(
-            currentScene.cards.map(card =>
-                card.id === cardId
-                    ? {...card, position: {x: data.x, y: data.y}}
-                    : card
-            )
-        );
-        console.log(cardsStore);
-     };
-
-
-    // Sauvegarde des positions dans l'API
-    const saveScenePositions = async (cards: Card[]) => {
-        try {
-            await fetch('/api/getCurrentScene', {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ scene: { ...currentScene, cards } })
-            });
-        } catch (error) {
-            console.error('Erreur lors de la sauvegarde des positions:', error);
+    /**
+     * (B) Dès qu'on a currentCampaign et qu'elle possède un champ `currentScene`,
+     *     on appelle getSceneThunk(currentCampaign.currentScene) => POST /api/getScene
+     */
+    useEffect(() => {
+        if (currentCampaign && currentCampaign.currentScene) {
+            dispatch(getSceneThunk(currentCampaign.currentScene));
         }
+    }, [dispatch, currentCampaign]);
+
+    /**
+     * (C) Synchroniser le state local `currentScene` avec la scène Redux
+     *     trouvée par son background
+     */
+    useEffect(() => {
+        if (!currentCampaign?.currentScene) return;
+        const foundScene = scenes.find(
+            (s) => s.background === currentCampaign.currentScene
+        );
+        if (foundScene && foundScene !== currentScene) {
+            setCurrentScene(foundScene);
+        }
+    }, [scenes, currentCampaign, currentScene]);
+
+    /**
+     * (D) handleCardStop : quand on déplace une carte
+     *     => on met à jour Redux (updateCardPosition) pour la position
+     *     => on met à jour le state local
+     *     => on envoie updateSceneThunk => PUT /api/updateScene
+     */
+    const handleCardStop = (
+        e: DraggableEvent,
+        data: DraggableData,
+        cardId: number
+    ) => {
+        if (!currentScene.background) return;
+
+        // 1) Mise à jour Redux => updateCardPosition
+        dispatch(
+            updateCardPosition({
+                background: currentScene.background,
+                cardId,
+                position: { x: data.x, y: data.y },
+            })
+        );
+
+        // 2) Mise à jour local
+        const updatedCards = currentScene.cards.map((c) =>
+            c.id === cardId ? { ...c, position: { x: data.x, y: data.y } } : c
+        );
+        const updatedScene: Scene = { ...currentScene, cards: updatedCards };
+        setCurrentScene(updatedScene);
+
+        // 3) Persister en BDD => PUT /api/updateScene
+        dispatch(updateSceneThunk(updatedScene));
     };
 
+    // Si aucune scène n'a de background => on affiche un message
+    if (!currentScene.background) {
+        return (
+            <Box>
+                <h2>Aucune scène sélectionnée</h2>
+            </Box>
+        );
+    }
+
+    // Rendu final de la scène (background + drag)
     return (
         <Box
             height="100vh"
@@ -87,40 +135,39 @@ export default function RenderPage() {
             backgroundRepeat="no-repeat"
             position="relative"
         >
-            {/* Affichage des cartes déplaçables */}
-            {currentScene.cards.map((card: Card) => (
-                <Draggable
-                    key={card.id}
-                    grid={[50, 50]} // Grille pour le déplacement
-                    defaultPosition={{
-                        x: card.position?.x || window.innerWidth - 120,
-                        y: card.position?.y || window.innerHeight - 120,
-                    }}
-                    onStop={(e, data) => handleCardStop(e, data, card.id)}
-                >
-                    <Box
-                        position="absolute"
-                        width="100px"
-                        height="100px"
-                        borderRadius="8px"
-                        display="flex"
-                        alignItems="center"
-                        justifyContent="center"
-                        overflow="hidden"
-                        cursor="grab"
-                    >
-                        {('picture' in card.identity) && (
-                            <Image
-                                src={card.identity.picture}
-                                alt={card.identity.name}
-                                boxSize="100px"
-                                objectFit="cover"
-                            />
-                        )}
-                    </Box>
-                </Draggable>
+            {currentScene.cards.map((card: Card) => {
+                const defaultX = card.position?.x ?? 100;
+                const defaultY = card.position?.y ?? 100;
 
-            ))}
+                return (
+                    <Draggable
+                        key={card.id}
+                        defaultPosition={{ x: defaultX, y: defaultY }}
+                        onStop={(e, data) => handleCardStop(e, data, card.id)}
+                    >
+                        <Box
+                            position="absolute"
+                            width="100px"
+                            height="100px"
+                            borderRadius="8px"
+                            display="flex"
+                            alignItems="center"
+                            justifyContent="center"
+                            overflow="hidden"
+                            cursor="grab"
+                        >
+                            {"picture" in card.identity && (
+                                <Image
+                                    src={card.identity.picture}
+                                    alt={card.identity.name}
+                                    boxSize="100px"
+                                    objectFit="cover"
+                                />
+                            )}
+                        </Box>
+                    </Draggable>
+                );
+            })}
         </Box>
     );
 }

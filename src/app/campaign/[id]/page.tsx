@@ -7,7 +7,6 @@ import PlayerCreatorModal from "@/components/PlayerCreatorModal";
 import {getPlayerAPI} from "@/redux/features/playerSlice";
 import Link from "next/link";
 import {getEntityAPI} from "@/redux/features/entitySlice";
-import {initSceneThunk} from "@/redux/features/sceneSlice";
 
  export default function Page({ params }: { params: {id: string} }) {
      const campaign = useAppSelector((state) => state.campaign.campaigns.find(campaign => campaign.name === decodeURI(params.id)));
@@ -28,9 +27,6 @@ import {initSceneThunk} from "@/redux/features/sceneSlice";
      const closeModal = () => setModalOpen(false);
 
      const handleNewWindow = () => {
-         if (username && campaign) {
-             dispatch(initSceneThunk(username, campaign.name, "scenes"));
-         }
          const newWindowUrl = "/game/" + params.id + "-" + username;
          window.open(newWindowUrl, "_blank");
      };

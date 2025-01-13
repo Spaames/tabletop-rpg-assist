@@ -1,33 +1,70 @@
-import { NextResponse, NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import mongoClientPromise from "@/utils/mongodb";
-import {dbName} from "@/utils/mongodb";
+import { dbName } from "@/utils/mongodb";
+import {Card} from "@/redux/features/sceneSlice";
 
-export async function PUT(req: NextRequest) {
+/**
+ * PUT /api/updateScene
+ * Body JSON : { background, music, cards }
+ *
+ * Met à jour la scène ayant "background" ou la crée si elle n'existe pas.
+ */
+export async function POST(request: NextRequest) {
     try {
-        const updatedScene = await req.json();
-        console.log(updatedScene);
-
-        if (!updatedScene) {
-            return NextResponse.json({ message: "Invalid Scene Data" }, {status: 400});
+        const { background, music, cards } = await request.json();
+        if (!background) {
+            return NextResponse.json(
+                { message: "No background provided", status: 400 },
+                { status: 400 }
+            );
         }
 
         const mongoClient = await mongoClientPromise;
         const db = mongoClient.db(dbName);
         const sceneCollection = db.collection("scenes");
 
-        const filter = { background: updatedScene.background };
+        // Cherche la scène
+        const existing = await sceneCollection.findOne({ background });
+        if (!existing) {
+            // On la crée
+            const newScene = {
+                background,
+                music: music || "",
+                cards: Array.isArray(cards) ? cards : [],
+            };
+            await sceneCollection.insertOne(newScene);
+            return NextResponse.json(
+                {
+                    message: "Scene created (didn't exist)",
+                    scene: newScene,
+                    status: 201,
+                },
+                { status: 201 }
+            );
+        } else {
+            // On la met à jour
+            const updateFields: { music?: string; cards?: Card[] } = {};
+            if (typeof music === "string") updateFields.music = music;
+            if (Array.isArray(cards)) updateFields.cards = cards;
 
-        const updateDoc = { $set: updatedScene };
+            await sceneCollection.updateOne(
+                { background },
+                { $set: updateFields }
+            );
 
-        const result = await sceneCollection.updateOne(filter, updateDoc);
-
-        if (result.matchedCount === 0) {
-            return NextResponse.json({ message: "Scene not found" }, { status: 400 });
+            const updatedScene = await sceneCollection.findOne({ background });
+            console.log("updatedScene =>", updatedScene)
+            return NextResponse.json({
+                message: "Scene updated successfully",
+                scene: updatedScene,
+                status: 200,
+            });
         }
-
-        return NextResponse.json({ message: "Scene updated successfully" }, {status: 200});
-    } catch (e) {
-        console.log(e);
-        return NextResponse.json({ message: "Failed to save scene", status: 500 });
+    } catch (error) {
+        console.error("Error while updating scene:", error);
+        return NextResponse.json(
+            { message: "Error while updating scene", status: 500 },
+            { status: 500 }
+        );
     }
 }
