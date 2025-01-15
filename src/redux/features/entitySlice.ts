@@ -6,6 +6,7 @@ export interface Entity {
     name: string;
     picture: string;
     HP: number;
+    currentHealth: number;
     STR : number;
     DEX : number;
     INT : number;

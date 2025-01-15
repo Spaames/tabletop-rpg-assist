@@ -9,7 +9,7 @@ import {
     CardHeader,
     Divider,
     Heading,
-    HStack,
+    HStack, Input,
     Stack,
     StackDivider,
     Table,
@@ -36,7 +36,7 @@ import {
 
 import { updateCampaignSceneAPI } from "@/redux/features/campaignSlice";
 
-import { Player } from "@/redux/features/playerSlice";
+import {Player} from "@/redux/features/playerSlice";
 import { Entity } from "@/redux/features/entitySlice";
 
 // Composant de sélection d'image
@@ -174,6 +174,22 @@ export default function ControlPage({ params }: { params: { id: string } }) {
 
         dispatch(updateSceneThunk(updatedScene));
     };
+
+    //Pour saoir si c'est un joueur ou une entités
+    // Type guard pour vérifier si c'est un Player
+    const isPlayer = (identity: Player | Entity): identity is Player => {
+        return (identity as Player).sex !== undefined;
+    };
+
+    //Modifier currentHealth
+    const handleChangeHealth = (identity: Player | Entity ,health: number) => {
+        if (isPlayer(identity)) {
+
+        } else {
+
+        }
+    }
+
 
     // ─────────────────────────────────────────────
     // Ouvrir la page de rendu
@@ -333,7 +349,14 @@ export default function ControlPage({ params }: { params: { id: string } }) {
                                                             <Tr key={index}>
                                                                 <Td>{card.identity.name}</Td>
                                                                 <Td>
-                                                                    {"HP" in card.identity ? card.identity.HP : "?"}
+                                                                    <Input
+                                                                        value={card.identity.currentHealth}
+                                                                        size={"sm"}
+                                                                        w={"50px"}
+                                                                        mr={5}
+                                                                        type={"text"}
+                                                                        onChange={(e) => handleChangeHealth(card.identity, parseInt(e.target.value))}
+                                                                    />
                                                                 </Td>
                                                                 <Td>
                                                                     <Button

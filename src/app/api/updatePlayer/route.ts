@@ -16,7 +16,7 @@ export async function PUT(req: NextRequest) {
         const db = mongoClient.db(dbName);
         const collection = db.collection("players");
 
-        const filter = { name: updatedPlayer.name };
+        const filter = { id: updatedPlayer.id };
 
         const updateDoc = { $set: updatedPlayer };
 

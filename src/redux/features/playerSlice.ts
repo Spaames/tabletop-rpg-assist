@@ -2,6 +2,7 @@ import {createSlice, PayloadAction} from '@reduxjs/toolkit';
 import {AppThunk} from "@/redux/store";
 
 export interface Player {
+    id : number;
     name: string;
     lvl: number;
     sex: string;
@@ -11,6 +12,7 @@ export interface Player {
     race: string;
     class: string;
     HP: number;
+    currentHealth: number;
     HD: string;
     STR: number;
     DEX: number;

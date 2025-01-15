@@ -22,6 +22,7 @@ export  async function POST(req: NextRequest) {
         }
 
         const playerList = (await fetchList).map(player => ({
+            id: player.id,
             name: player.name,
             lvl: player.lvl,
             sex: player.sex,

@@ -15,6 +15,12 @@ const PlayerStatsForm: React.FC<PlayerStatsFormProps> = ({playerData}) => {
 
     const handleChange = (field: keyof Player, value: string | number) => {
         dispatch(updatePlayer({ name: playerData.name, updatedData: { [field]: value } }));
+        //prends en compte si c'est la vie : currentHealth est égale à la vie max hors game
+        if (field === "HP") {
+            if(typeof value === "number") {
+                dispatch(updatePlayer({ name: playerData.name, updatedData: { currentHealth: value } }));
+            }
+        }
     };
 
     if (!playerData) {

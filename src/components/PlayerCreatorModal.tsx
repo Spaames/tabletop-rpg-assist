@@ -30,6 +30,7 @@ const PlayerCreatorModal = ({ isOpen, onClose, campaignName }: { isOpen: boolean
 
     const handleSubmit = () => {
         const newPlayer = {
+            id: Date.now(),
             name: formData.playerName,
             lvl: 1,
             sex: "",
@@ -39,6 +40,7 @@ const PlayerCreatorModal = ({ isOpen, onClose, campaignName }: { isOpen: boolean
             race: "",
             class: "",
             HP: 0,
+            currentHealth: 0,
             HD: "",
             STR: 0,
             DEX: 0,
