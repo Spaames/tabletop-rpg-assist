@@ -1,58 +1,46 @@
 import { NextRequest, NextResponse } from "next/server";
 import mongoClientPromise from "@/utils/mongodb";
-import {dbName} from "@/utils/mongodb";
+import { dbName } from "@/utils/mongodb";
 
-export  async function POST(req: NextRequest) {
+/**
+ * POST /api/getPlayer
+ * Body JSON : { id }
+ *
+ * Renvoie le player ayant cet id, s'il existe.
+ */
+export async function POST(request: NextRequest) {
     try {
-        const { campaign } = await req.json();
-        if (!campaign) {
-            return NextResponse.json({ message: "No campaign ??" });
+        const { id } = await request.json();
+        if (!id) {
+            return NextResponse.json(
+                { message: "No id provided", status: 400 },
+                { status: 400 }
+            );
         }
 
         const mongoClient = await mongoClientPromise;
         const db = mongoClient.db(dbName);
         const playerCollection = db.collection("players");
 
-        const fetchList = playerCollection.find({
-            campaign: campaign.toString(),
-        }).toArray();
-
-        if ((await fetchList).length === 0) {
-            return NextResponse.json({ message: "No player for this campaign " + campaign });
+        // Cherche la scène
+        const player = await playerCollection.findOne({ id });
+        if (!player) {
+            return NextResponse.json(
+                { message: `No player found for this id: ${id}`, status: 404 },
+                { status: 404 }
+            );
         }
 
-        const playerList = (await fetchList).map(player => ({
-            id: player.id,
-            name: player.name,
-            lvl: player.lvl,
-            sex: player.sex,
-            age: player.age,
-            height: player.height,
-            weight: player.weight,
-            race: player.race,
-            class: player.class,
-            HP: player.HP,
-            HD: player.HD,
-            STR: player.STR,
-            DEX: player.DEX,
-            CON: player.CON,
-            INT: player.INT,
-            WIS: player.WIS,
-            CHA: player.CHA,
-            DEF: player.DEF,
-            INIT: player.INIT,
-            weapons: player.weapons,
-            abilities: player.abilities,
-            bonus: player.bonus,
-            malus: player.malus,
-            specialRules: player.specialRules,
-            inventory: player.inventory,
-            picture: player.picture,
-            campaign: player.campaign,
-        }));
-
-        return NextResponse.json({ message: "player for this campaign", playerList: playerList, status: 201 });
-    } catch (err) {
-        console.log("Error while fetching players",err);
+        return NextResponse.json({
+            message: "player retrieved successfully",
+            player: player,
+            status: 200,
+        });
+    } catch (error) {
+        console.error("Error while fetching one plauer:", error);
+        return NextResponse.json(
+            { message: "Error while fetching one plyer", status: 500 },
+            { status: 500 }
+        );
     }
 }

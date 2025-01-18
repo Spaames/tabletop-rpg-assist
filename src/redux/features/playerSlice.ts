@@ -57,10 +57,21 @@ const playerSlice = createSlice({
             state.loading = false;
             state.error = null;
         },
-        getSuccess(state, action: PayloadAction<Player[]>) {
+        getAllSuccess(state, action: PayloadAction<Player[]>) {
             state.players = action.payload;
             state.loading = false;
             state.error = null;
+        },
+        getOneSuccess(state, action: PayloadAction<Player>) {
+            const updatedPlayer = action.payload;
+            const index = state.players.findIndex(
+                (player) => player.id === updatedPlayer.id
+            );
+            if (index === -1) {
+                state.players.push(updatedPlayer);
+            } else {
+                state.players[index] = updatedPlayer;
+            }
         },
         updateSuccess(state, action: PayloadAction<Player>) {
             const index = state.players.findIndex(player => player.name === action.payload.name);
@@ -89,8 +100,9 @@ const playerSlice = createSlice({
 
 export const {
     start, failure,
-    createSuccess, getSuccess, updateSuccess,
+    createSuccess, getAllSuccess, updateSuccess,
     updatePlayer,
+    getOneSuccess,
 } = playerSlice.actions;
 
 export const createPlayerAPI = (player: Player): AppThunk => async (dispatch) => {
@@ -117,7 +129,7 @@ export const createPlayerAPI = (player: Player): AppThunk => async (dispatch) =>
 export const getPlayerAPI = (campaign: string): AppThunk => async (dispatch) => {
     try {
         dispatch(start());
-        const response = await fetch("/api/getPlayer", {
+        const response = await fetch("/api/getPlayers", {
             method: "POST",
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({campaign: campaign}),
@@ -125,13 +137,34 @@ export const getPlayerAPI = (campaign: string): AppThunk => async (dispatch) => 
 
         const data = await response.json();
         if(response.ok) {
-            dispatch(getSuccess(data.playerList));
+            dispatch(getAllSuccess(data.playerList));
         } else {
             dispatch(failure(data.message));
         }
     } catch (error) {
         console.log(error);
-        dispatch(failure("Error while getting campaign"));
+        dispatch(failure("Error while getting players"));
+    }
+}
+
+export const getOnePlayerThunk = (id: number): AppThunk => async (dispatch) => {
+    try {
+        dispatch(start());
+        const response = await fetch("/api/getPlayer", {
+            method: "POST",
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({id}),
+        });
+
+        const data = await response.json();
+        if(response.ok) {
+            dispatch(getOneSuccess(data.player));
+        } else {
+            dispatch(failure(data.message));
+        }
+    } catch (error) {
+        console.log(error);
+        dispatch(failure("Error while getting player"));
     }
 }
 
@@ -155,6 +188,8 @@ export const updatePlayerAPI = (updatedPlayer: Player): AppThunk => async (dispa
         dispatch(failure("Error while updating player"));
     }
 }
+
+
 
 
 export default playerSlice.reducer;

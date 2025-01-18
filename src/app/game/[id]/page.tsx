@@ -36,7 +36,7 @@ import {
 
 import { updateCampaignSceneAPI } from "@/redux/features/campaignSlice";
 
-import {Player} from "@/redux/features/playerSlice";
+import {getPlayerAPI, Player, updatePlayer, updatePlayerAPI} from "@/redux/features/playerSlice";
 import { Entity } from "@/redux/features/entitySlice";
 
 // Composant de sélection d'image
@@ -52,7 +52,7 @@ export default function ControlPage({ params }: { params: { id: string } }) {
     // Scenes en Redux
     const scenes = useAppSelector((state) => state.scene.scenes);
 
-    // État local : la scène sélectionnée
+    // État local :
     const [currentScene, setCurrentScene] = useState<Scene>({
         background: "",
         music: "",
@@ -128,6 +128,8 @@ export default function ControlPage({ params }: { params: { id: string } }) {
 
         // Mettre à jour la campagne => currentScene = imagePath
         dispatch(updateCampaignSceneAPI(userUrl, campaignUrl, imagePath));
+        dispatch(getPlayerAPI(campaignUrl));
+
 
         setIsModalOpen(false);
     };
@@ -135,7 +137,7 @@ export default function ControlPage({ params }: { params: { id: string } }) {
     // ─────────────────────────────────────────────
     // Ajouter un player / entité => addCard => updateScene
     // ─────────────────────────────────────────────
-    const addPlayerEntity = (entity: Player | Entity) => {
+    const addPlayerEntity = (entity: number | Entity) => {
         if (!currentScene.background) return;
 
         const newCard = {
@@ -175,21 +177,22 @@ export default function ControlPage({ params }: { params: { id: string } }) {
         dispatch(updateSceneThunk(updatedScene));
     };
 
-    //Pour saoir si c'est un joueur ou une entités
-    // Type guard pour vérifier si c'est un Player
-    const isPlayer = (identity: Player | Entity): identity is Player => {
-        return (identity as Player).sex !== undefined;
-    };
-
     //Modifier currentHealth
-    const handleChangeHealth = (identity: Player | Entity ,health: number) => {
+    const handleChangeHealth = (identity: Player | Entity, value: number)=> {
         if (isPlayer(identity)) {
-
-        } else {
-
+            if(value > identity.HP) return null;
+            if(value < 0) return null;
+            dispatch(updatePlayer({name: identity.name, updatedData: {currentHealth: value}}));
+            dispatch(updatePlayerAPI({
+                ...identity,
+                currentHealth: value
+            }));
         }
     }
 
+    const isPlayer = (identity: Player | Entity): identity is Player => {
+        return (identity as Player).class !== undefined; // Vérifie une propriété unique à Player
+    };
 
     // ─────────────────────────────────────────────
     // Ouvrir la page de rendu
@@ -255,7 +258,7 @@ export default function ControlPage({ params }: { params: { id: string } }) {
                                                 <Td>
                                                     <Button
                                                         colorScheme="blue"
-                                                        onClick={() => addPlayerEntity(player)}
+                                                        onClick={() => addPlayerEntity(player.id)}
                                                     >
                                                         +
                                                     </Button>
@@ -324,6 +327,92 @@ export default function ControlPage({ params }: { params: { id: string } }) {
                                     </Box>
                                     <Box mt={4} mb={4}>
                                         <Heading size="xs" textTransform="uppercase">
+                                            Joueurs présents
+                                        </Heading>
+                                        <Table size="sm">
+                                            <TableContainer>
+                                                <Thead>
+                                                    <Tr>
+                                                        <Th>Nom</Th>
+                                                        <Th>PV</Th>
+                                                        <Th>Suppr</Th>
+                                                    </Tr>
+                                                </Thead>
+                                                <Tbody>
+                                                    {currentScene.cards.length === 0 ? (
+                                                        <Tr>
+                                                            <Td colSpan={3}>
+                                                                <Text fontSize="sm">
+                                                                    Pas de joueurs présents
+                                                                </Text>
+                                                            </Td>
+                                                        </Tr>
+                                                    ) : (
+                                                        currentScene.cards.map((card, index) => (
+                                                            <Tr key={index}>
+                                                                {typeof card.identity === "number" ? (
+                                                                    <>
+                                                                        {players.map((player) => (
+                                                                            player.id === card.identity ? (
+                                                                                <>
+                                                                                    <Td>{player.name}</Td>
+                                                                                    <Td>
+                                                                                        <HStack>
+                                                                                            <Button
+                                                                                                size={"sm"}
+                                                                                                colorScheme="red"
+                                                                                                onClick={() => handleChangeHealth(player, player.currentHealth - 5)}
+                                                                                            >
+                                                                                                -5
+                                                                                            </Button>
+                                                                                            <Button
+                                                                                                size={"sm"}
+                                                                                                colorScheme="red"
+                                                                                                onClick={() => handleChangeHealth(player, player.currentHealth - 1)}
+                                                                                            >
+                                                                                                -1
+                                                                                            </Button>
+                                                                                            <Heading size={"sm"}>
+                                                                                                {player.currentHealth}/{player.HP}
+                                                                                            </Heading>
+                                                                                            <Button
+                                                                                                size={"sm"}
+                                                                                                colorScheme="green"
+                                                                                                onClick={() => handleChangeHealth(player, player.currentHealth + 1)}
+                                                                                            >
+                                                                                                +1
+                                                                                            </Button>
+                                                                                            <Button
+                                                                                                size={"sm"}
+                                                                                                colorScheme="green"
+                                                                                                onClick={() => handleChangeHealth(player, player.currentHealth + 5)}
+                                                                                            >
+                                                                                                +5
+                                                                                            </Button>
+                                                                                        </HStack>
+                                                                                    </Td>
+                                                                                    <Td>
+                                                                                        <Button
+                                                                                            colorScheme="red"
+                                                                                            onClick={() => removePlayerEntity(card.id)}
+                                                                                        >
+                                                                                            -
+                                                                                        </Button>
+                                                                                    </Td>
+                                                                                </>
+                                                                            ) : null
+                                                                        ))}
+                                                                    </>
+                                                                ) : null}
+                                                            </Tr>
+                                                        ))
+                                                    )}
+                                                </Tbody>
+                                            </TableContainer>
+                                        </Table>
+                                    </Box>
+                                    <Box mt={4} mb={4}>
+                                        <Heading size="xs" textTransform="uppercase">
                                             Joueurs / Entités présents
                                         </Heading>
                                         <Table size="sm">
@@ -340,32 +429,29 @@ export default function ControlPage({ params }: { params: { id: string } }) {
                                                         <Tr>
                                                             <Td colSpan={3}>
                                                                 <Text fontSize="sm">
-                                                                    Pas de joueurs ou entités présents
+                                                                    Pas de entités présents
                                                                 </Text>
                                                             </Td>
                                                         </Tr>
                                                     ) : (
                                                         currentScene.cards.map((card, index) => (
                                                             <Tr key={index}>
-                                                                <Td>{card.identity.name}</Td>
-                                                                <Td>
-                                                                    <Input
-                                                                        value={card.identity.currentHealth}
-                                                                        size={"sm"}
-                                                                        w={"50px"}
-                                                                        mr={5}
-                                                                        type={"text"}
-                                                                        onChange={(e) => handleChangeHealth(card.identity, parseInt(e.target.value))}
-                                                                    />
-                                                                </Td>
-                                                                <Td>
-                                                                    <Button
-                                                                        colorScheme="red"
-                                                                        onClick={() => removePlayerEntity(card.id)}
-                                                                    >
-                                                                        -
-                                                                    </Button>
-                                                                </Td>
+                                                                {typeof card.identity === "number" ? null : (
+                                                                    <>
+                                                                        <Td>{card.identity.name}</Td>
+                                                                        <Td>
+                                                                            {card.identity.currentHealth}
+                                                                        </Td>
+                                                                        <Td>
+                                                                            <Button
+                                                                                colorScheme="red"
+                                                                                onClick={() => removePlayerEntity(card.id)}
+                                                                            >
+                                                                                -
+                                                                            </Button>
+                                                                        </Td>
+                                                                    </>
+                                                                )}
                                                             </Tr>
                                                         ))
                                                     )}

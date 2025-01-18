@@ -15,6 +15,7 @@ import {
 } from "@/redux/features/sceneSlice";
 
 import { getCampaignAPI, Campaign } from "@/redux/features/campaignSlice";
+import {getPlayerAPI, Player} from "@/redux/features/playerSlice";
 
 export default function RenderPage() {
     const dispatch = useAppDispatch();
@@ -38,6 +39,8 @@ export default function RenderPage() {
     // 3) On a aussi la liste de scènes en Redux
     const scenes = useAppSelector((state) => state.scene.scenes);
 
+    const players = useAppSelector((state) => state.player.players);
+
     // 4) État local : la scène affichée
     const [currentScene, setCurrentScene] = useState<Scene>({
         background: "",
@@ -53,7 +56,7 @@ export default function RenderPage() {
     useEffect(() => {
         const interval = setInterval(() => {
             dispatch(getCampaignAPI("rdu"));
-            // ou getCampaignAPI(username) si tu l'as paramétré ainsi
+            dispatch(getPlayerAPI("Bloodborne"));
         }, 2000);
 
         return () => clearInterval(interval);
@@ -156,13 +159,34 @@ export default function RenderPage() {
                             overflow="hidden"
                             cursor="grab"
                         >
-                            {"picture" in card.identity && (
-                                <Image
-                                    src={card.identity.picture}
-                                    alt={card.identity.name}
-                                    boxSize="100px"
-                                    objectFit="cover"
-                                />
+                            {typeof card.identity === "number" ? (
+                                <>
+                                    {players.map((player: Player) => (
+                                        player.id === card.identity ? (
+                                            <>
+                                                {"picture" in player && (
+                                                    <Image
+                                                        src={player.picture}
+                                                        alt={player.name}
+                                                        boxSize="100px"
+                                                        objectFit="cover"
+                                                    />
+                                                )}
+                                            </>
+                                        ) : null
+                                    ))}
+                                </>
+                            ) : (
+                                <>
+                                    {"picture" in card.identity && (
+                                        <Image
+                                            src={card.identity.picture}
+                                            alt={card.identity.name}
+                                            boxSize="100px"
+                                            objectFit="cover"
+                                        />
+                                    )}
+                                </>
                             )}
                         </Box>
                     </Draggable>

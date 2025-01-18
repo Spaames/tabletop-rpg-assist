@@ -1,11 +1,10 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { AppThunk } from "@/redux/store";
 import {Entity} from "@/redux/features/entitySlice";
-import {Player} from "@/redux/features/playerSlice";
 
 export interface Card {
     id: number;
-    identity:  Player | Entity
+    identity:  number | Entity
     position: { x: number; y: number };
 }
 
