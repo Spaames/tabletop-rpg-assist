@@ -4,6 +4,8 @@ import React, { useEffect, useState } from "react";
 import { Box, Image } from "@chakra-ui/react";
 import Draggable, { DraggableEvent, DraggableData } from "react-draggable";
 import { useAppDispatch, useAppSelector } from "@/redux/hook";
+import { FaSkull } from "react-icons/fa";  // icône crâne
+
 
 import {
     Scene,
@@ -122,7 +124,7 @@ export default function RenderPage() {
                 let currentHP = 0;
 
                 if (typeof card.identity === "number") {
-                    // C'est un Player => on trouve l'objet Player dans le store
+                    // => c'est un Player
                     const foundPlayer = players.find((p) => p.id === card.identity);
                     if (foundPlayer) {
                         imageSrc = foundPlayer.picture || "";
@@ -131,15 +133,12 @@ export default function RenderPage() {
                         currentHP = foundPlayer.currentHealth;
                     }
                 } else {
-                    // C'est une Entity => on lit .picture, .name, .HP dedans
+                    // => c'est une Entity
                     const entity = card.identity as Entity;
-                    // ou direct : const { HP, currentHealth, picture, name } = card.identity
-
                     imageSrc = entity.picture || "";
                     imageAlt = entity.name;
                     maxHP = entity.HP;
-                    // ICI : 'currentHealth' se trouve sur 'card' (d'après ta question).
-                    // => on le lit sur 'card'
+                    // pour les entités, currentHealth est stocké dans card.currentHealth
                     currentHP = card.currentHealth || 0;
                 }
 
@@ -151,13 +150,23 @@ export default function RenderPage() {
                     if (lifePercent > 100) lifePercent = 100;
                 }
 
+                // On considère "mort" si lifePercent === 0
+                const isDead = lifePercent === 0;
+
                 return (
                     <Draggable
                         key={card.id}
                         position={{ x, y }}
                         onStop={(e, data) => handleCardStop(e, data, card.id)}
                     >
-                        <Box position="absolute" width="100px" height="110px" cursor="grab">
+                        <Box
+                            position="absolute"
+                            width="100px"
+                            height="110px"
+                            cursor="grab"
+                            // si PV = 0 => on grise la carte
+                            filter={isDead ? "grayscale(100%)" : "none"}
+                        >
                             {/* L'image */}
                             <Box
                                 position="absolute"
@@ -196,6 +205,23 @@ export default function RenderPage() {
                                     transition="width 0.2s linear"
                                 />
                             </Box>
+
+                            {/* Overlay "tête de mort" si mort */}
+                            {isDead && (
+                                <Box
+                                    position="absolute"
+                                    top="0"
+                                    left="0"
+                                    width="100%"
+                                    height="100%"
+                                    bg="rgba(255,0,0,0.2)"
+                                    display="flex"
+                                    alignItems="center"
+                                    justifyContent="center"
+                                >
+                                    <FaSkull color="white" size="30px" />
+                                </Box>
+                            )}
                         </Box>
                     </Draggable>
                 );
