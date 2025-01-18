@@ -31,7 +31,8 @@ import {
     getSceneThunk,          // => POST /api/getScene
     updateSceneThunk,       // => PUT /api/updateScene
     addCard,
-    removeCard,
+    removeCard, updateCardCurrentHealth,
+    Card as SceneCard,
 } from "@/redux/features/sceneSlice";
 
 import { updateCampaignSceneAPI } from "@/redux/features/campaignSlice";
@@ -41,6 +42,7 @@ import { Entity } from "@/redux/features/entitySlice";
 
 // Composant de sélection d'image
 import ImageSelectorModal from "@/components/ImageSelectorModal";
+import {background} from "@chakra-ui/icons";
 
 export default function ControlPage({ params }: { params: { id: string } }) {
     // L'URL param, ex: "Bloodborne-rdu"
@@ -140,25 +142,42 @@ export default function ControlPage({ params }: { params: { id: string } }) {
     const addPlayerEntity = (entity: number | Entity) => {
         if (!currentScene.background) return;
 
+        let x = 0, y = 0;
+
+        // On se base sur le nombre de cartes existantes
+        // pour décaler verticalement
+        const index = currentScene.cards.length;
+
+        // Si on est côté client, on calcule la position "bas droite"
+        if (typeof window !== "undefined") {
+            x = 0;
+            y = index * 110;
+        }
+        // Sinon, on laisse x=0, y=0 par défaut (ex. SSR)
+
         const newCard = {
             id: Date.now(),
             identity: entity,
-            position: { x: 0, y: 0 },
-        };
+            position: { x, y },
+            currentHealth: typeof entity === "number"
+                ? 0
+                : entity.HP,
+        }
 
-        // 1) Mise à jour Redux local (addCard)
+        // 1) On ajoute la carte dans Redux
         dispatch(addCard({ background: currentScene.background, card: newCard }));
 
-        // 2) État local
+        // 2) On met à jour le state local
         const updatedScene = {
             ...currentScene,
             cards: [...currentScene.cards, newCard],
         };
         setCurrentScene(updatedScene);
 
-        // 3) Mettre à jour la BDD (PUT /api/updateScene)
+        // 3) On persiste la scène (PUT /api/updateScene)
         dispatch(updateSceneThunk(updatedScene));
     };
+
 
     // ─────────────────────────────────────────────
     // Retirer un player / entité => removeCard => updateScene
@@ -178,19 +197,29 @@ export default function ControlPage({ params }: { params: { id: string } }) {
     };
 
     //Modifier currentHealth
-    const handleChangeHealth = (identity: Player | Entity, value: number)=> {
-        if (isPlayer(identity)) {
-            if(value > identity.HP) return null;
-            if(value < 0) return null;
+    const handleChangeHealth = (identity: Player | SceneCard, value: number)=> {
+        if (value < 0) return null;
+        if (isPlayer(identity))
+            {if(value > identity.HP) return null;
             dispatch(updatePlayer({name: identity.name, updatedData: {currentHealth: value}}));
             dispatch(updatePlayerAPI({
                 ...identity,
                 currentHealth: value
             }));
+        } else {
+            dispatch(updateCardCurrentHealth({background: currentScene.background, cardId: identity.id, currentHealth: value}));
+            const updatedCards = currentScene.cards.map((c) =>
+                c.id === identity.id ? { ...c, currentHealth: value } : c
+            );
+            const updatedScene: Scene = { ...currentScene, cards: updatedCards };
+            setCurrentScene(updatedScene);
+
+            // 4) Persister la scène en BDD => PUT /api/updateScene
+            dispatch(updateSceneThunk(updatedScene));
         }
     }
 
-    const isPlayer = (identity: Player | Entity): identity is Player => {
+    const isPlayer = (identity: Player | SceneCard): identity is Player => {
         return (identity as Player).class !== undefined; // Vérifie une propriété unique à Player
     };
 
@@ -440,7 +469,39 @@ export default function ControlPage({ params }: { params: { id: string } }) {
                                                                     <>
                                                                         <Td>{card.identity.name}</Td>
                                                                         <Td>
-                                                                            {card.identity.currentHealth}
+                                                                            <HStack>
+                                                                                <Button
+                                                                                    size={"sm"}
+                                                                                    colorScheme="red"
+                                                                                    onClick={() => handleChangeHealth(card as SceneCard, card.currentHealth - 5)}
+                                                                                >
+                                                                                    -5
+                                                                                </Button>
+                                                                                <Button
+                                                                                    size={"sm"}
+                                                                                    colorScheme="red"
+                                                                                    onClick={() => handleChangeHealth(card as SceneCard, card.currentHealth - 1)}
+                                                                                >
+                                                                                    -1
+                                                                                </Button>
+                                                                                <Heading size={"sm"}>
+                                                                                    {card.currentHealth}/{card.identity.HP}
+                                                                                </Heading>
+                                                                                <Button
+                                                                                    size={"sm"}
+                                                                                    colorScheme="green"
+                                                                                    onClick={() => handleChangeHealth(card as SceneCard, card.currentHealth + 1)}
+                                                                                >
+                                                                                    +1
+                                                                                </Button>
+                                                                                <Button
+                                                                                    size={"sm"}
+                                                                                    colorScheme="green"
+                                                                                    onClick={() => handleChangeHealth(card as SceneCard, card.currentHealth + 5)}
+                                                                                >
+                                                                                    +5
+                                                                                </Button>
+                                                                            </HStack>
                                                                         </Td>
                                                                         <Td>
                                                                             <Button

@@ -3,79 +3,63 @@
 import React, { useEffect, useState } from "react";
 import { Box, Image } from "@chakra-ui/react";
 import Draggable, { DraggableEvent, DraggableData } from "react-draggable";
-
-// Redux
 import { useAppDispatch, useAppSelector } from "@/redux/hook";
+
 import {
     Scene,
     Card,
-    getSceneThunk,         // POST /api/getScene
+    getSceneThunk,
     updateCardPosition,
-    updateSceneThunk,       // PUT /api/updateScene
+    updateSceneThunk,
 } from "@/redux/features/sceneSlice";
-
 import { getCampaignAPI, Campaign } from "@/redux/features/campaignSlice";
-import {getPlayerAPI, Player} from "@/redux/features/playerSlice";
+import { getPlayerAPI, Player } from "@/redux/features/playerSlice";
+import { Entity } from "@/redux/features/entitySlice";
 
 export default function RenderPage() {
     const dispatch = useAppDispatch();
 
-    /**
-     * Ici on définit "username" et "campaignName" en dur,
-     * mais tu peux évidemment les récupérer via un param d'URL
-     * ou tout autre moyen selon tes besoins
-     */
+    // user & campaign
     const username = "rdu";
     const campaignName = "Bloodborne";
 
-    // 1) On récupère la liste de campagnes dans Redux
+    // Redux state
     const campaigns = useAppSelector((state) => state.campaign.campaigns);
+    const scenes = useAppSelector((state) => state.scene.scenes);
+    const players = useAppSelector((state) => state.player.players);
+    const entities = useAppSelector((state) => state.entity.entities);
 
-    // 2) On cherche la campagne qui correspond (username, name)
+    // Trouver la bonne campagne
     const currentCampaign: Campaign | undefined = campaigns.find(
         (c) => c.username === username && c.name === campaignName
     );
 
-    // 3) On a aussi la liste de scènes en Redux
-    const scenes = useAppSelector((state) => state.scene.scenes);
-
-    const players = useAppSelector((state) => state.player.players);
-
-    // 4) État local : la scène affichée
+    // Scene locale
     const [currentScene, setCurrentScene] = useState<Scene>({
         background: "",
         music: "",
         cards: [],
     });
 
-    /**
-     * (A) Polling pour récupérer la liste de campagnes => /api/getCampaign
-     *    On appelle un thunk getCampaignAPI(username: string),
-     *    qui fait un POST avec {username} et renvoie campaignList.
-     */
+    // Polling pour campaigns, players, etc.
     useEffect(() => {
         const interval = setInterval(() => {
-            dispatch(getCampaignAPI("rdu"));
-            dispatch(getPlayerAPI("Bloodborne"));
+            dispatch(getCampaignAPI(username));
+            dispatch(getPlayerAPI(campaignName));
+            // dispatch(getEntityAPI(campaignName)) si tu as un thunk entité
         }, 2000);
 
         return () => clearInterval(interval);
-    }, [dispatch]);
+    }, [dispatch, username, campaignName]);
 
-    /**
-     * (B) Dès qu'on a currentCampaign et qu'elle possède un champ `currentScene`,
-     *     on appelle getSceneThunk(currentCampaign.currentScene) => POST /api/getScene
-     */
+    // Charger la scene quand currentCampaign.currentScene existe
     useEffect(() => {
-        if (currentCampaign && currentCampaign.currentScene) {
+        if (currentCampaign?.currentScene) {
             dispatch(getSceneThunk(currentCampaign.currentScene));
         }
     }, [dispatch, currentCampaign]);
 
-    /**
-     * (C) Synchroniser le state local `currentScene` avec la scène Redux
-     *     trouvée par son background
-     */
+    // Sync local scene
     useEffect(() => {
         if (!currentCampaign?.currentScene) return;
         const foundScene = scenes.find(
@@ -86,20 +70,10 @@ export default function RenderPage() {
         }
     }, [scenes, currentCampaign, currentScene]);
 
-    /**
-     * (D) handleCardStop : quand on déplace une carte
-     *     => on met à jour Redux (updateCardPosition) pour la position
-     *     => on met à jour le state local
-     *     => on envoie updateSceneThunk => PUT /api/updateScene
-     */
-    const handleCardStop = (
-        e: DraggableEvent,
-        data: DraggableData,
-        cardId: number
-    ) => {
+    // Déplacement d'une carte => Redux + BDD
+    const handleCardStop = (e: DraggableEvent, data: DraggableData, cardId: number) => {
         if (!currentScene.background) return;
 
-        // 1) Mise à jour Redux => updateCardPosition
         dispatch(
             updateCardPosition({
                 background: currentScene.background,
@@ -108,18 +82,17 @@ export default function RenderPage() {
             })
         );
 
-        // 2) Mise à jour local
+        // local
         const updatedCards = currentScene.cards.map((c) =>
             c.id === cardId ? { ...c, position: { x: data.x, y: data.y } } : c
         );
         const updatedScene: Scene = { ...currentScene, cards: updatedCards };
         setCurrentScene(updatedScene);
 
-        // 3) Persister en BDD => PUT /api/updateScene
+        // BDD
         dispatch(updateSceneThunk(updatedScene));
     };
 
-    // Si aucune scène n'a de background => on affiche un message
     if (!currentScene.background) {
         return (
             <Box>
@@ -128,7 +101,6 @@ export default function RenderPage() {
         );
     }
 
-    // Rendu final de la scène (background + drag)
     return (
         <Box
             height="100vh"
@@ -139,55 +111,91 @@ export default function RenderPage() {
             position="relative"
         >
             {currentScene.cards.map((card: Card) => {
-                const defaultX = card.position?.x ?? 100;
-                const defaultY = card.position?.y ?? 100;
+                // Lecture de la position
+                const x = card.position?.x ?? 0;
+                const y = card.position?.y ?? 0;
+
+                // On va distinguer Player vs. Entity
+                let imageSrc = "";
+                let imageAlt = "";
+                let maxHP = 0;
+                let currentHP = 0;
+
+                if (typeof card.identity === "number") {
+                    // C'est un Player => on trouve l'objet Player dans le store
+                    const foundPlayer = players.find((p) => p.id === card.identity);
+                    if (foundPlayer) {
+                        imageSrc = foundPlayer.picture || "";
+                        imageAlt = foundPlayer.name;
+                        maxHP = foundPlayer.HP;
+                        currentHP = foundPlayer.currentHealth;
+                    }
+                } else {
+                    // C'est une Entity => on lit .picture, .name, .HP dedans
+                    const entity = card.identity as Entity;
+                    // ou direct : const { HP, currentHealth, picture, name } = card.identity
+
+                    imageSrc = entity.picture || "";
+                    imageAlt = entity.name;
+                    maxHP = entity.HP;
+                    // ICI : 'currentHealth' se trouve sur 'card' (d'après ta question).
+                    // => on le lit sur 'card'
+                    currentHP = card.currentHealth || 0;
+                }
+
+                // Calcul de la barre de vie
+                let lifePercent = 0;
+                if (maxHP > 0) {
+                    lifePercent = Math.round((currentHP / maxHP) * 100);
+                    if (lifePercent < 0) lifePercent = 0;
+                    if (lifePercent > 100) lifePercent = 100;
+                }
 
                 return (
                     <Draggable
                         key={card.id}
-                        defaultPosition={{ x: defaultX, y: defaultY }}
+                        position={{ x, y }}
                         onStop={(e, data) => handleCardStop(e, data, card.id)}
                     >
-                        <Box
-                            position="absolute"
-                            width="100px"
-                            height="100px"
-                            borderRadius="8px"
-                            display="flex"
-                            alignItems="center"
-                            justifyContent="center"
-                            overflow="hidden"
-                            cursor="grab"
-                        >
-                            {typeof card.identity === "number" ? (
-                                <>
-                                    {players.map((player: Player) => (
-                                        player.id === card.identity ? (
-                                            <>
-                                                {"picture" in player && (
-                                                    <Image
-                                                        src={player.picture}
-                                                        alt={player.name}
-                                                        boxSize="100px"
-                                                        objectFit="cover"
-                                                    />
-                                                )}
-                                            </>
-                                        ) : null
-                                    ))}
-                                </>
-                            ) : (
-                                <>
-                                    {"picture" in card.identity && (
-                                        <Image
-                                            src={card.identity.picture}
-                                            alt={card.identity.name}
-                                            boxSize="100px"
-                                            objectFit="cover"
-                                        />
-                                    )}
-                                </>
-                            )}
+                        <Box position="absolute" width="100px" height="110px" cursor="grab">
+                            {/* L'image */}
+                            <Box
+                                position="absolute"
+                                top="0"
+                                left="0"
+                                width="100px"
+                                height="100px"
+                            >
+                                {imageSrc ? (
+                                    <Image
+                                        src={imageSrc}
+                                        alt={imageAlt}
+                                        boxSize="100px"
+                                        objectFit="cover"
+                                    />
+                                ) : (
+                                    <Box bg="gray.300" width="100px" height="100px">
+                                        {imageAlt}
+                                    </Box>
+                                )}
+                            </Box>
+
+                            {/* Barre de vie en bas */}
+                            <Box
+                                position="absolute"
+                                bottom="0"
+                                left="0"
+                                right="0"
+                                height="10px"
+                                bg="red"
+                            >
+                                <Box
+                                    width={`${lifePercent}%`}
+                                    height="100%"
+                                    bg="green"
+                                    transition="width 0.2s linear"
+                                />
+                            </Box>
                         </Box>
                     </Draggable>
                 );

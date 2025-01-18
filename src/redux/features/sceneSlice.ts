@@ -6,6 +6,7 @@ export interface Card {
     id: number;
     identity:  number | Entity
     position: { x: number; y: number };
+    currentHealth: number;
 }
 
 export interface Scene {
@@ -84,6 +85,16 @@ const sceneSlice = createSlice({
                 }
             }
         },
+        updateCardCurrentHealth(state, action: PayloadAction<{ background: string; cardId: number, currentHealth: number }>) {
+            const { background, cardId, currentHealth } = action.payload;
+            const scene = state.scenes.find((s) => s.background === background);
+            if (scene) {
+                const card = scene.cards.find((c) => c.id === cardId);
+                if (card) {
+                    card.currentHealth = currentHealth;
+                }
+            }
+        },
         selectBackground: (state, action: PayloadAction<string>) => {
             state.selectedBackground = action.payload;
         },
@@ -100,6 +111,7 @@ export const {
     removeCard,
     updateCardPosition,
     selectBackground,
+    updateCardCurrentHealth
 } = sceneSlice.actions;
 
 export default sceneSlice.reducer;
