@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, {useEffect, useState} from "react";
 import {
     Box,
     Button,
@@ -9,7 +9,7 @@ import {
     CardHeader,
     Divider,
     Heading,
-    HStack, Input,
+    HStack,
     Stack,
     StackDivider,
     Table,
@@ -24,25 +24,27 @@ import {
 } from "@chakra-ui/react";
 
 // Redux
-import { useAppDispatch, useAppSelector } from "@/redux/hook";
+import {useAppDispatch, useAppSelector} from "@/redux/hook";
 import {
-    Scene,
-    getAllSceneThunk,      // => GET /api/scenes
-    getSceneThunk,          // => POST /api/getScene
-    updateSceneThunk,       // => PUT /api/updateScene
     addCard,
-    removeCard, updateCardCurrentHealth,
     Card as SceneCard,
+    endCombat,
+    getAllSceneThunk,
+    getSceneThunk, nextTurnThunk,
+    removeCard,
+    Scene, setFigtingOrder,
+    startCombat,
+    updateCardCurrentHealth,
+    updateSceneThunk,
 } from "@/redux/features/sceneSlice";
 
-import { updateCampaignSceneAPI } from "@/redux/features/campaignSlice";
+import {updateCampaignSceneAPI} from "@/redux/features/campaignSlice";
 
 import {getPlayerAPI, Player, updatePlayer, updatePlayerAPI} from "@/redux/features/playerSlice";
-import { Entity } from "@/redux/features/entitySlice";
+import {Entity} from "@/redux/features/entitySlice";
 
 // Composant de sélection d'image
 import ImageSelectorModal from "@/components/ImageSelectorModal";
-import {background} from "@chakra-ui/icons";
 
 export default function ControlPage({ params }: { params: { id: string } }) {
     // L'URL param, ex: "Bloodborne-rdu"
@@ -59,6 +61,8 @@ export default function ControlPage({ params }: { params: { id: string } }) {
         background: "",
         music: "",
         cards: [],
+        isFighting: false,
+        fightingOrder: []
     });
 
     // Joueurs & Entités de cette campagne
@@ -123,6 +127,8 @@ export default function ControlPage({ params }: { params: { id: string } }) {
                 background: imagePath,
                 music: "",
                 cards: [],
+                isFighting: false,
+                fightingOrder: [],
             };
             setCurrentScene(newScene);
             dispatch(updateSceneThunk(newScene));
@@ -135,6 +141,15 @@ export default function ControlPage({ params }: { params: { id: string } }) {
 
         setIsModalOpen(false);
     };
+
+    const handleInitiative = (entity: number | Entity) => {
+        if (typeof entity === "number") {
+            const player = players.find((p) => p.id === entity);
+            return player!.DEX;
+        } else {
+            return entity.DEX;
+        }
+    }
 
     // ─────────────────────────────────────────────
     // Ajouter un player / entité => addCard => updateScene
@@ -155,6 +170,7 @@ export default function ControlPage({ params }: { params: { id: string } }) {
         }
         // Sinon, on laisse x=0, y=0 par défaut (ex. SSR)
 
+
         const newCard = {
             id: Date.now(),
             identity: entity,
@@ -162,6 +178,8 @@ export default function ControlPage({ params }: { params: { id: string } }) {
             currentHealth: typeof entity === "number"
                 ? 0
                 : entity.HP,
+            isActive: false,
+            INIT: handleInitiative(entity),
         }
 
         // 1) On ajoute la carte dans Redux
@@ -223,6 +241,71 @@ export default function ControlPage({ params }: { params: { id: string } }) {
         return (identity as Player).class !== undefined; // Vérifie une propriété unique à Player
     };
 
+    const startFight = () => {
+        if (!currentScene.background) return;
+
+        // 1) On calcule l'ordre
+        const order = handleFightingOrder();
+        if (!order) return;
+
+        // 2) On maj localement
+        const updatedScene: Scene = {
+            ...currentScene,
+            isFighting: true,
+            fightingOrder: order,
+            // On désactive tout + on active la 1ère carte
+            cards: currentScene.cards.map((c) => ({
+                ...c,
+                isActive: c.id === order[0],
+            })),
+        };
+
+        // 3) On envoie ça dans Redux
+        dispatch(setFigtingOrder({ background: currentScene.background, fightingOrder: order }));
+        dispatch(startCombat({ background: currentScene.background }));
+
+        // 4) Mise à jour du state local
+        setCurrentScene(updatedScene);
+
+        // 5) Persister en BDD
+        dispatch(updateSceneThunk(updatedScene));
+    };
+
+
+    const endFight = () => {
+        if (!currentScene.background) return;
+
+        // 1) On signale à Redux qu'on termine
+        dispatch(endCombat({ background: currentScene.background }));
+
+        // 2) On “synchronise” la version locale
+        const updatedScene = {
+            ...currentScene,
+            isFighting: false,
+            cards: currentScene.cards.map((c) => ({ ...c, isActive: false }))
+        };
+        setCurrentScene(updatedScene);
+
+        // 3) On persiste en BDD (PUT /api/updateScene)
+        dispatch(updateSceneThunk(updatedScene));
+    };
+
+    // La fonction "Tour suivant"
+    const tourSuivant = () => {
+        if (!currentScene.background) return;
+        // On utilise le thunk "nextTurnThunk" qui appelle nextTurn + updateSceneThunk
+        dispatch(nextTurnThunk(currentScene.background));
+    };
+
+    const handleFightingOrder = () => {
+        if (!currentScene.background) return;
+        const copy = [...currentScene.cards];
+
+        copy.sort((a, b) => b.INIT - a.INIT);
+
+        return copy.map(card => card.id);
+    }
+
     // ─────────────────────────────────────────────
     // Ouvrir la page de rendu
     // ─────────────────────────────────────────────
@@ -243,9 +326,27 @@ export default function ControlPage({ params }: { params: { id: string } }) {
         <Box display="flex" flexDirection="column" height="100vh">
             {/* HEADER */}
             <Box flex="1" display="flex" alignItems="center" justifyContent="left">
-                <Heading as="h1" size="lg" ml={4}>
-                    Contrôle MJ
-                </Heading>
+                <HStack>
+                    <Heading as="h1" size="lg" ml={4} mr={5}>
+                        Contrôle MJ
+                    </Heading>
+                    {isSceneDefault ? null : (
+                        currentScene.isFighting ? (
+                            <>
+                                <Button ml={5} mr={5} onClick={tourSuivant}>
+                                    Tour suivant
+                                </Button>
+                                <Button ml={5} mr={5} onClick={endFight}>
+                                    Fin du combat
+                                </Button>
+                            </>
+                        ) : (
+                            <Button ml={5} onClick={startFight}>
+                                Lancer un combat
+                            </Button>
+                        )
+                    )}
+                </HStack>
             </Box>
 
             {/* CONTENU PRINCIPAL */}
@@ -378,7 +479,10 @@ export default function ControlPage({ params }: { params: { id: string } }) {
                                                         </Tr>
                                                     ) : (
                                                         currentScene.cards.map((card, index) => (
-                                                            <Tr key={index}>
+                                                            <Tr
+                                                                key={index}
+                                                                bg={card.isActive ? "blue.100" : "transparent"}
+                                                            >
                                                                 {typeof card.identity === "number" ? (
                                                                     <>
                                                                         {players.map((player) => (
@@ -464,7 +568,10 @@ export default function ControlPage({ params }: { params: { id: string } }) {
                                                         </Tr>
                                                     ) : (
                                                         currentScene.cards.map((card, index) => (
-                                                            <Tr key={index}>
+                                                            <Tr
+                                                                key={index}
+                                                                bg={card.isActive ? "blue.100" : "transparent"}
+                                                            >
                                                                 {typeof card.identity === "number" ? null : (
                                                                     <>
                                                                         <Td>{card.identity.name}</Td>

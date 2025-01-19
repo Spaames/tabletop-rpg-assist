@@ -7,12 +7,16 @@ export interface Card {
     identity:  number | Entity
     position: { x: number; y: number };
     currentHealth: number;
+    INIT: number;
+    isActive: boolean;
 }
 
 export interface Scene {
     background: string;
     music: string;
     cards: Card[];
+    isFighting: boolean;
+    fightingOrder: number[];
 }
 
 interface SceneState {
@@ -98,6 +102,92 @@ const sceneSlice = createSlice({
         selectBackground: (state, action: PayloadAction<string>) => {
             state.selectedBackground = action.payload;
         },
+        startCombat(state, action: PayloadAction<{ background: string }>) {
+            const { background } = action.payload;
+            const scene = state.scenes.find((s) => s.background === background);
+            if (!scene) return;
+
+            scene.isFighting = true;
+
+            // On désactive toutes les cartes
+            scene.cards.forEach((card) => { card.isActive = false });
+
+            // On active la première carte
+            if (scene.fightingOrder.length > 0) {
+                const firstCardId = scene.fightingOrder[0];
+                const firstCard = scene.cards.find((c) => c.id === firstCardId);
+                if (firstCard) {
+                    firstCard.isActive = true;
+                }
+            }
+        },
+        endCombat(
+            state,
+            action: PayloadAction<{ background: string }>
+        ) {
+            const { background } = action.payload;
+            const scene = state.scenes.find((s) => s.background === background);
+            if (!scene) return;
+
+            scene.isFighting = false;
+            // On peut tout désactiver quand le combat se termine
+            scene.cards.forEach((card) => (card.isActive = false));
+        },
+        setFigtingOrder(state, action: PayloadAction<{ background: string; fightingOrder: number[] }>) {
+            const { background, fightingOrder } = action.payload;
+            const scene = state.scenes.find((s) => s.background === background);
+            if (!scene) return;
+
+            scene.fightingOrder = fightingOrder;
+        },
+        nextTurn(
+            state,
+            action: PayloadAction<{ background: string }>
+        ) {
+            const { background } = action.payload;
+            const scene = state.scenes.find((s) => s.background === background);
+            if (!scene) return;
+
+            // Si pas en combat ou pas de fightingOrder, on ne fait rien
+            if (!scene.isFighting || scene.fightingOrder.length === 0) {
+                return;
+            }
+
+            // 1) On cherche QUI est actuellement isActive
+            let currentIndex = scene.fightingOrder.findIndex((cardId) => {
+                const card = scene.cards.find((c) => c.id === cardId);
+                return card?.isActive === true;
+            });
+
+            // 2) Si personne n'est encore actif (par ex. initialisation), on active la 1ère carte
+            if (currentIndex === -1) {
+                currentIndex = 0;
+                scene.cards.forEach((c) => (c.isActive = false));
+                const firstCard = scene.cards.find(
+                    (c) => c.id === scene.fightingOrder[0]
+                );
+                if (firstCard) firstCard.isActive = true;
+                return;
+            }
+
+            // 3) Désactiver la carte actuelle
+            const oldCard = scene.cards.find(
+                (c) => c.id === scene.fightingOrder[currentIndex]
+            );
+            if (oldCard) oldCard.isActive = false;
+
+            // 4) Incrémenter l'index; si on dépasse la taille du tableau, on boucle à 0
+            let nextIndex = currentIndex + 1;
+            if (nextIndex >= scene.fightingOrder.length) {
+                nextIndex = 0;
+            }
+
+            // 5) Activer la carte suivante
+            const nextCard = scene.cards.find(
+                (c) => c.id === scene.fightingOrder[nextIndex]
+            );
+            if (nextCard) nextCard.isActive = true;
+        },
     },
 });
 
@@ -111,7 +201,11 @@ export const {
     removeCard,
     updateCardPosition,
     selectBackground,
-    updateCardCurrentHealth
+    updateCardCurrentHealth,
+    startCombat,
+    endCombat,
+    setFigtingOrder,
+    nextTurn
 } = sceneSlice.actions;
 
 export default sceneSlice.reducer;
@@ -207,5 +301,20 @@ export const updateSceneThunk = (scene: Scene): AppThunk => async (dispatch) => 
     } catch (err) {
         console.error(err);
         dispatch(failure("error while updating scene (try/catch)"));
+    }
+};
+
+export const nextTurnThunk = (background: string): AppThunk => async (
+    dispatch,
+    getState
+) => {
+    dispatch(nextTurn({ background }));
+    // Pour persister les changements (mise à jour isActive),
+    // on récupère la scène en question, et on la renvoie à updateSceneThunk.
+    const state = getState();
+    const scene = state.scene.scenes.find((s) => s.background === background);
+    if (scene) {
+        // Re-utilise le PUT /api/updateScene déjà existant
+        dispatch(updateSceneThunk(scene));
     }
 };

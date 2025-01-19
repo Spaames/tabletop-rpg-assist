@@ -5,6 +5,8 @@ import { Box, Image } from "@chakra-ui/react";
 import Draggable, { DraggableEvent, DraggableData } from "react-draggable";
 import { useAppDispatch, useAppSelector } from "@/redux/hook";
 import { FaSkull } from "react-icons/fa";  // icône crâne
+import { GiBroadsword } from "react-icons/gi";
+
 
 
 import {
@@ -41,6 +43,8 @@ export default function RenderPage() {
         background: "",
         music: "",
         cards: [],
+        isFighting: false,
+        fightingOrder: []
     });
 
     // Polling pour campaigns, players, etc.
@@ -166,6 +170,12 @@ export default function RenderPage() {
                             cursor="grab"
                             // si PV = 0 => on grise la carte
                             filter={isDead ? "grayscale(100%)" : "none"}
+                            boxShadow={
+                                card.isActive
+                                    ? "0 0 10px 4px rgba(255, 215, 0, 0.7)" // ombre dorée
+                                    : "none"
+                            }
+                            border={card.isActive ? "2px solid gold" : "none"}
                         >
                             {/* L'image */}
                             <Box
@@ -220,6 +230,19 @@ export default function RenderPage() {
                                     justifyContent="center"
                                 >
                                     <FaSkull color="white" size="30px" />
+                                </Box>
+                            )}
+                            {/* Overlay épée */}
+                            {card.isActive && !isDead && (
+                                <Box
+                                    position="absolute"
+                                    top="-8px"
+                                    right="-8px"
+                                    bgColor="rgba(0, 0, 0, 0.7)"
+                                    borderRadius="50%"
+                                    p="2px"
+                                >
+                                    <GiBroadsword color="white" size="24px" />
                                 </Box>
                             )}
                         </Box>
