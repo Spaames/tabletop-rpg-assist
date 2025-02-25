@@ -46,6 +46,8 @@ import {Entity} from "@/redux/features/entitySlice";
 // Composant de sélection d'image
 import ImageSelectorModal from "@/components/ImageSelectorModal";
 
+//Damn need to refactor this, cause, holy cow
+
 export default function ControlPage({ params }: { params: { id: string } }) {
     // L'URL param, ex: "Bloodborne-rdu"
     const url = decodeURI(params.id);

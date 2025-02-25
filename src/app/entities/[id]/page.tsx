@@ -73,6 +73,7 @@ export default function Page({ params }: { params: { id: string } }) {
             name: "",
             picture: "",
             HP: 0,
+            currentHealth: 0,
             STR: 0,
             DEX: 0,
             INT: 0,

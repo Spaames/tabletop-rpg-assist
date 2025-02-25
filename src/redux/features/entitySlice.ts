@@ -79,6 +79,7 @@ export const {
     updateEntity, updateEntities,
 } = entitySlice.actions;
 
+/*
 export const createEntityAPI = (campaignName: string): AppThunk => async (dispatch) => {
     try {
         dispatch(start());
@@ -99,6 +100,7 @@ export const createEntityAPI = (campaignName: string): AppThunk => async (dispat
         dispatch(failure("Error while creating entity"));
     }
 }
+ */
 
 export const getEntityAPI = (campaignName: string): AppThunk => async (dispatch) => {
     try {

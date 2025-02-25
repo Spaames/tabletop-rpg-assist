@@ -1,6 +1,6 @@
 import { MongoClient } from 'mongodb';
 
-export const dbName = "TTRpgAssistDev";
+export const dbName = "TTRpgAssistDev"; //change it for dev, prod...
 const uriDb = process.env.MONGODB_URI as string;
 const options = {}
 

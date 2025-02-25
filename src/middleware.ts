@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
+//for logout, if the cookie has expired ---> /logout
 export function middleware(req: NextRequest) {
     const token = req.cookies.get('authToken');
 

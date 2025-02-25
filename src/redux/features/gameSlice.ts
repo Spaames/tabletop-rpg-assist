@@ -1,5 +1,4 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { AppThunk } from "@/redux/store";
 import {Player} from "@/redux/features/playerSlice";
 import {Entity} from "@/redux/features/entitySlice";
 
