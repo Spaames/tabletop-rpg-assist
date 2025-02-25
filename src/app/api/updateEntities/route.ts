@@ -2,6 +2,13 @@ import { NextResponse, NextRequest } from "next/server";
 import mongoClientPromise from "@/utils/mongodb";
 import { dbName } from "@/utils/mongodb";
 
+/**
+ * PUT /api/updateEntities
+ * Body JSON : { updatedEntities } ==> array of entities
+ *
+ * Update the entities in the bdd, associated with the name and the campaign
+ */
+
 export async function PUT(req: NextRequest) {
     try {
         const updatedEntities = await req.json();

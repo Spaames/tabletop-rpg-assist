@@ -1,19 +1,22 @@
-import { NextRequest, NextResponse } from "next/server";
-import mongoClientPromise from "@/utils/mongodb";
-import {dbName} from "@/utils/mongodb";
+import {NextRequest, NextResponse} from "next/server";
+import mongoClientPromise, {dbName} from "@/utils/mongodb";
+
+/**
+ * POST /api/createPlayer
+ * Body JSON : { player }
+ *
+ * Create a player with his name and the campaign associated (other data will be added with updatePlayer
+ *
+ */
 
 export async function POST(req: NextRequest) {
     try {
-        const body = await req.json();
-        console.log("Request Body:", body);
-        const player = body;
-
+        const player = await req.json();
         if (!player) {
-            return NextResponse.json({ message: "Player data is required" }, { status: 400 });
+            return NextResponse.json({ message: "player obj is required" }, { status: 400 });
         }
 
         const name = player.name;
-
         const mongoClient = await mongoClientPromise;
         const db = mongoClient.db(dbName);
         const playerCollection = db.collection("players");
@@ -22,8 +25,6 @@ export async function POST(req: NextRequest) {
         if (existingPlayer) {
             return NextResponse.json({ message: "Player already exists" }, { status: 401 });
         }
-
-
 
         const result = await playerCollection.insertOne(player);
 

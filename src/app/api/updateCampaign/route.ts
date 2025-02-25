@@ -6,8 +6,7 @@ import { dbName } from "@/utils/mongodb";
  * POST /api/updateCampaign
  * Body JSON : { username, campaignName, currentScene }
  *
- * Met à jour la campagne ayant { username, name = campaignName } en lui affectant
- * currentScene = la valeur envoyée.
+ * update the scene of the campaign
  */
 export async function POST(req: NextRequest) {
     try {
@@ -16,17 +15,15 @@ export async function POST(req: NextRequest) {
 
         if (!username || !campaignName) {
             return NextResponse.json(
-                { message: "username or campaignName missing", status: 400 },
+                { message: "params are missing", status: 400 },
                 { status: 400 }
             );
         }
 
-        // 2) Connexion Mongo
         const mongoClient = await mongoClientPromise;
         const db = mongoClient.db(dbName);
         const campaignCollection = db.collection("campaigns");
 
-        // 3) Vérifier que la campagne existe
         const existingCampaign = await campaignCollection.findOne({
             username: username.toString(),
             name: campaignName.toString(),

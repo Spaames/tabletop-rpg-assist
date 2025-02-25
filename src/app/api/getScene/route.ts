@@ -6,7 +6,7 @@ import { dbName } from "@/utils/mongodb";
  * POST /api/getScene
  * Body JSON : { background }
  *
- * Renvoie la scène ayant ce background, s'il existe.
+ * Get scenes data for a specific background
  */
 export async function POST(request: NextRequest) {
     try {

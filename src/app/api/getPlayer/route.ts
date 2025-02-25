@@ -6,7 +6,8 @@ import { dbName } from "@/utils/mongodb";
  * POST /api/getPlayer
  * Body JSON : { id }
  *
- * Renvoie le player ayant cet id, s'il existe.
+ * Get player data for a specific id
+ *
  */
 export async function POST(request: NextRequest) {
     try {

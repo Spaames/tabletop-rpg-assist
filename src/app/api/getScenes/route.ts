@@ -2,6 +2,13 @@ import { NextResponse } from "next/server";
 import mongoClientPromise from "@/utils/mongodb";
 import { dbName } from "@/utils/mongodb";
 
+/**
+ * GET /api/getScenes
+ *
+ * Get all scenes
+ *
+ */
+
 export async function GET() {
     try {
 

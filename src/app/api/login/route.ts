@@ -4,6 +4,13 @@ import jwt from "jsonwebtoken";
 import mongoClientPromise from "@/utils/mongodb";
 import { dbName } from "@/utils/mongodb";
 
+/**
+ * POST /api/login
+ * Body JSON : { username, password }
+ *
+ * Log a user with username and password. Bcrypt for bdd
+ */
+
 export async function POST(req: NextRequest) {
     try {
         const { username, password } = await req.json();

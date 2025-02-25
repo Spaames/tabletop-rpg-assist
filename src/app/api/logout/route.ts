@@ -1,5 +1,12 @@
 import { NextResponse } from "next/server";
 
+/**
+ * GET /api/logout
+ * Body : none
+ *
+ * Remove the token of auth
+ */
+
 export async function GET() {
     const response = NextResponse.json({message: "user logged out"});
 

@@ -2,6 +2,14 @@ import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
 
+/**
+ * GET /api/listFiles
+ * URL_params : searchParams -> username, campaignName, folder
+ *
+ * Get all files path for a specific username, campaign and folder type
+ *
+ */
+
 export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const username = searchParams.get('username');

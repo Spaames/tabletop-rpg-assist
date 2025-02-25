@@ -11,7 +11,6 @@ import { Card } from "@/redux/features/sceneSlice";
  */
 export async function POST(request: NextRequest) {
     try {
-        // On récupère les données
         const {
             background,
             music,
@@ -20,7 +19,6 @@ export async function POST(request: NextRequest) {
             fightingOrder
         } = await request.json();
 
-        // Vérification minimum
         if (!background) {
             return NextResponse.json(
                 { message: "No background provided", status: 400 },
@@ -28,17 +26,12 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Connexion DB
         const mongoClient = await mongoClientPromise;
         const db = mongoClient.db(dbName);
         const sceneCollection = db.collection("scenes");
 
-        // Cherche si la scène existe déjà
         const existing = await sceneCollection.findOne({ background });
 
-        // ─────────────────────────────────────────────────────────────
-        // Cas 1 : la scène n'existe pas => on la crée
-        // ─────────────────────────────────────────────────────────────
         if (!existing) {
             const newScene = {
                 background,
@@ -60,9 +53,6 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // ─────────────────────────────────────────────────────────────
-        // Cas 2 : la scène existe => on la met à jour
-        // ─────────────────────────────────────────────────────────────
         const updateFields: {
             music?: string;
             cards?: Card[];
@@ -70,7 +60,6 @@ export async function POST(request: NextRequest) {
             fightingOrder?: number[];
         } = {};
 
-        // Mise à jour conditionnelle (on ne met à jour que si la donnée est présente)
         if (typeof music === "string") {
             updateFields.music = music;
         }
@@ -84,13 +73,11 @@ export async function POST(request: NextRequest) {
             updateFields.fightingOrder = fightingOrder;
         }
 
-        // On exécute l'update
         await sceneCollection.updateOne(
             { background },
             { $set: updateFields }
         );
 
-        // On relit la scène mise à jour pour la renvoyer au client
         const updatedScene = await sceneCollection.findOne({ background });
         console.log("updatedScene =>", updatedScene);
 

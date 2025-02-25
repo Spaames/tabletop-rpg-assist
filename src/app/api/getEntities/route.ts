@@ -2,11 +2,19 @@ import { NextRequest, NextResponse } from "next/server";
 import mongoClientPromise from "@/utils/mongodb";
 import {dbName} from "@/utils/mongodb";
 
+/**
+ * POST /api/getEntities
+ * Body JSON : { campaignName }
+ *
+ * Get all entities for a specific campaign
+ *
+ */
+
 export  async function POST(req: NextRequest) {
     try {
         const { campaignName } = await req.json();
         if (!campaignName) {
-            return NextResponse.json({ message: "No campaign ??" });
+            return NextResponse.json({ message: "campaign name is required" });
         }
 
         const mongoClient = await mongoClientPromise;

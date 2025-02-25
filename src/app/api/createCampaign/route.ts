@@ -2,12 +2,19 @@ import { NextRequest, NextResponse } from "next/server";
 import mongoClientPromise from "@/utils/mongodb";
 import {dbName} from "@/utils/mongodb";
 
+/**
+ * POST /api/createCampain
+ * Body JSON : { name, username }
+ *
+ * Create a campaign with his name and username of the creator
+ *
+ */
+
 export async function POST(req: NextRequest) {
     try {
         const { name, username } = await req.json();
-
         if (!name || !username) {
-            return NextResponse.json({ message: "Name AND playerCount are required" }, { status: 400 });
+            return NextResponse.json({ message: "campaign name AND username are required" }, { status: 400 });
         }
 
         const mongoClient = await mongoClientPromise;
@@ -18,8 +25,6 @@ export async function POST(req: NextRequest) {
         if (existingCampaign) {
             return NextResponse.json({ message: "Campaign already exists" }, { status: 401 });
         }
-
-
 
         const result = await campaignCollection.insertOne({ name, username });
 

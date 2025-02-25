@@ -3,6 +3,13 @@ import bcrypt from "bcryptjs";
 import mongoClientPromise from "@/utils/mongodb";
 import {dbName} from "@/utils/mongodb";
 
+/**
+ * POST /api/register
+ * Body JSON : { username, password }
+ *
+ * Insert user in bdd
+ */
+
 export async function POST(req: NextRequest) {
     try {
         const { username, password } = await req.json();

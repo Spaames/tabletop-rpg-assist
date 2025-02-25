@@ -2,6 +2,12 @@ import { NextResponse, NextRequest } from "next/server";
 import mongoClientPromise from "@/utils/mongodb";
 import {dbName} from "@/utils/mongodb";
 
+/**
+ * PUT /api/updatePlayer
+ * Body JSON : updatedPlayer
+ *
+ * Update player in bdd
+ */
 
 export async function PUT(req: NextRequest) {
     try {
