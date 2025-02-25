@@ -25,7 +25,7 @@ export default function RenderPage() {
 
     // user & campaign
     const username = "rdu";
-    const campaignName = "Bloodborne";
+    const campaignName = "Aetherium";
 
     // Redux state
     const campaigns = useAppSelector((state) => state.campaign.campaigns);
@@ -111,7 +111,7 @@ export default function RenderPage() {
         <Box
             height="100vh"
             backgroundImage={`url(${currentScene.background})`}
-            backgroundSize="cover"
+            backgroundSize="contain"
             backgroundPosition="center"
             backgroundRepeat="no-repeat"
             position="relative"
